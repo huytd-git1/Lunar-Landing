@@ -13,7 +13,7 @@ import bundledData from './data/bundledEphemeris.json';
 import { calculateSiteVisibilitySeries } from './services/visibility';
 import { calculateSiteMetrics } from './services/metrics';
 import { generateAnalysisJson, downloadFile } from './services/exportData';
-import { convertObserverAltToKm } from './services/coordinates';
+import { querySiteEphemeris } from './services/horizonsClient';
 
 import { Header } from './components/Header';
 import { SiteConfigPanel } from './components/SiteConfigPanel';
@@ -31,7 +31,7 @@ import { HeightComparisonModal } from './components/HeightComparisonModal';
 import { useLanguage } from './i18n/LanguageContext';
 
 export const App: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   // 1. Mission and Site Configurations
   const [sites, setSites] = useState<SiteConfig[]>(DEFAULT_SITES);
   const [selectedSiteId, setSelectedSiteId] = useState<string>('site-a');
@@ -152,7 +152,7 @@ export const App: React.FC = () => {
 
   const activePoint = activePoints[activeIndex] || activePoints[0] || null;
 
-  // Handle live analysis query via backend proxy / Horizons API
+  // Handle live analysis query via backend proxy / Horizons API or client-side synthetic model
   const handleRunAnalysis = useCallback(async () => {
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -162,51 +162,34 @@ export const App: React.FC = () => {
       let updatedCount = 0;
 
       for (const site of sites) {
-        const altKm = convertObserverAltToKm(site.observerHeight, site.terrainElevation);
-
-        // Fetch Sun (COMMAND=10)
-        const sunUrl = `/api/horizons?command=10&lon=${site.longitude}&lat=${site.latitude}&altKm=${altKm}&start=${encodeURIComponent(
-          missionSettings.startTime
-        )}&stop=2026-11-22%2000:00&step=${encodeURIComponent(missionSettings.stepSize)}`;
-
-        // Fetch Earth (COMMAND=399)
-        const earthUrl = `/api/horizons?command=399&lon=${site.longitude}&lat=${site.latitude}&altKm=${altKm}&start=${encodeURIComponent(
-          missionSettings.startTime
-        )}&stop=2026-11-22%2000:00&step=${encodeURIComponent(missionSettings.stepSize)}`;
-
-        const [sunRes, earthRes] = await Promise.all([
-          fetch(sunUrl).then((r) => r.json()),
-          fetch(earthUrl).then((r) => r.json()),
-        ]);
-
-        if (!sunRes.success) {
-          throw new Error(`Failed to retrieve Sun ephemeris for ${site.name}: ${sunRes.error}`);
-        }
-        if (!earthRes.success) {
-          throw new Error(`Failed to retrieve Earth ephemeris for ${site.name}: ${earthRes.error}`);
+        const queryRes = await querySiteEphemeris(site, missionSettings, dataMode, language);
+        if (!queryRes.success) {
+          throw new Error(queryRes.error || `Failed to analyze site ${site.name}`);
         }
 
         newCache[site.id] = {
-          sun: sunRes.records,
-          earth: earthRes.records,
-          source: sunRes.cached ? 'NASA/JPL Horizons API (Cached)' : 'NASA/JPL Horizons API (Live)',
+          sun: queryRes.sun!,
+          earth: queryRes.earth!,
+          source: queryRes.source || 'NASA/JPL Horizons Ephemeris',
         };
         updatedCount++;
       }
 
       setEphemerisCache(newCache);
       setActiveIndex(0);
-      console.log(`[Analysis Complete] Successfully updated ${updatedCount} sites from Horizons.`);
+      console.log(`[Analysis Complete] Successfully updated ${updatedCount} sites.`);
     } catch (err) {
       console.error('[Analysis Error]', err);
       setAnalysisError(
         (err as Error).message ||
-          'Failed to connect to Horizons service. You can continue using the bundled real offline dataset.'
+          (language === 'vi'
+            ? 'Không thể kết nối đến máy chủ Horizons. Bạn có thể nhấn "Dùng Bộ Dữ Liệu Ngoại Tuyến Có Sẵn" hoặc đổi sang Chế độ Mô phỏng.'
+            : 'Failed to connect to Horizons service. You can click "Use Bundled Offline Dataset" or switch to Demonstration Mode.')
       );
     } finally {
       setIsAnalyzing(false);
     }
-  }, [sites, missionSettings, ephemerisCache]);
+  }, [sites, missionSettings, ephemerisCache, dataMode, language]);
 
   // Fallback handler when live query fails
   const handleUseFallback = () => {
