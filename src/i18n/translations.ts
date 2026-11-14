@@ -90,6 +90,8 @@ export interface Translations {
   layerEarthVector: string;
   layerPsr: string;
   cursorLabel: string;
+  tab2DMap: string;
+  tab3DVirtual: string;
 
   // Local Horizon Chart
   skyChartTitle: string;
@@ -317,6 +319,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     layerEarthVector: 'Tia Trái Đất',
     layerPsr: 'Bẫy Băng PSR',
     cursorLabel: 'Con trỏ',
+    tab2DMap: 'Bản Đồ 2D Cực Nam',
+    tab3DVirtual: 'Không Gian 3D Ảo',
 
     // Local Horizon Chart
     skyChartTitle: 'Biểu Đồ Bầu Trời & Chân Trời Địa Phương',
@@ -543,6 +547,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
     layerEarthVector: 'Earth Vector',
     layerPsr: 'PSR Ice Traps',
     cursorLabel: 'Cursor',
+    tab2DMap: '2D Polar Map',
+    tab3DVirtual: '3D Virtual Space',
 
     // Local Horizon Chart
     skyChartTitle: 'Local Horizon & Sky Chart',

@@ -19,6 +19,7 @@ import { Header } from './components/Header';
 import { SiteConfigPanel } from './components/SiteConfigPanel';
 import { MissionSettingsPanel } from './components/MissionSettingsPanel';
 import { LunarSiteMap } from './components/LunarSiteMap';
+import { LunarVirtual3DView } from './components/LunarVirtual3DView';
 import { LocalHorizonChart } from './components/LocalHorizonChart';
 import { TimeSeriesChart } from './components/TimeSeriesChart';
 import { VisibilityTimeline } from './components/VisibilityTimeline';
@@ -37,6 +38,7 @@ export const App: React.FC = () => {
   const [selectedSiteId, setSelectedSiteId] = useState<string>('site-a');
   const [missionSettings, setMissionSettings] = useState<MissionSettings>(DEFAULT_MISSION_SETTINGS);
   const [dataMode, setDataMode] = useState<DataMode>('real_terrain');
+  const [mapVisualMode, setMapVisualMode] = useState<'3d' | '2d'>('3d');
 
   // 2. Ephemeris Cache
   // Initialize with pre-bundled real NASA/JPL Horizons dataset
@@ -286,15 +288,54 @@ export const App: React.FC = () => {
           <div className="lg:col-span-8 xl:col-span-9 flex flex-col gap-4">
             {/* Upper Dual Visualization Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-              {/* Lunar South Pole Polar Map */}
-              <div className="xl:col-span-5 flex flex-col">
-                <LunarSiteMap
-                  sites={sites}
-                  selectedSiteId={selectedSiteId}
-                  onSelectSite={setSelectedSiteId}
-                  onUpdateSite={handleUpdateSite}
-                  activePoint={activePoint}
-                />
+              {/* Lunar South Pole View (3D Virtual WebGL / 2D GIS Map) */}
+              <div className="xl:col-span-5 flex flex-col gap-2">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center space-x-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setMapVisualMode('3d')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                        mapVisualMode === '3d'
+                          ? 'bg-cyan-500 text-slate-950 shadow-sm font-bold'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {t.tab3DVirtual} (3D)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMapVisualMode('2d')}
+                      className={`px-2.5 py-1 rounded-md font-semibold transition ${
+                        mapVisualMode === '2d'
+                          ? 'bg-cyan-500 text-slate-950 shadow-sm font-bold'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {t.tab2DMap} (2D)
+                    </button>
+                  </div>
+                  <span className="text-[11px] font-mono text-cyan-400 hidden sm:inline">
+                    NASA Horizons & LOLA
+                  </span>
+                </div>
+
+                {mapVisualMode === '3d' ? (
+                  <LunarVirtual3DView
+                    sites={sites}
+                    selectedSiteId={selectedSiteId}
+                    onSelectSite={setSelectedSiteId}
+                    activePoint={activePoint}
+                  />
+                ) : (
+                  <LunarSiteMap
+                    sites={sites}
+                    selectedSiteId={selectedSiteId}
+                    onSelectSite={setSelectedSiteId}
+                    onUpdateSite={handleUpdateSite}
+                    activePoint={activePoint}
+                  />
+                )}
               </div>
 
               {/* Local Horizon & Sky Chart */}

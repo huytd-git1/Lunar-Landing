@@ -46,3 +46,4 @@ describe('Synthetic Demonstration Ephemeris Generator (Lunar Polar Celestial Mec
     expect(res.earth[0].elevation).toBeLessThan(8);
   });
 });
+

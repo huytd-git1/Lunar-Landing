@@ -137,3 +137,4 @@ export function generateSyntheticLunarEphemeris(options: SyntheticEphemerisOptio
     source: 'Demonstration Synthetic Lunar Ephemerides (Analytical Orbit Model; Gläser 2014 & Bryant 2009)',
   };
 }
+
