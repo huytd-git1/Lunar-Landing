@@ -1,0 +1,32 @@
+# Horizon Profile: Illustrative Shackleton Connecting Ridge Vicinity
+# DEM Source: LRO LOLA DEM (South Pole 20m/px & 30m/px float product)
+# Reference Surface: Lunar Sphere R = 1737.4 km
+# Search Radius: 120 km with lunar curvature correction
+# Observer Height Above Ground: 2.0 meters
+# Note: User-supplied illustrative profile for prototype testing. Not certified for flight operations.
+azimuth_deg,horizon_elevation_deg
+0.0,1.15
+15.0,1.40
+30.0,1.85
+45.0,2.30
+60.0,2.10
+75.0,1.65
+90.0,1.20
+105.0,0.95
+120.0,0.80
+135.0,0.75
+150.0,1.05
+165.0,1.45
+180.0,1.90
+195.0,2.40
+210.0,2.65
+225.0,2.15
+240.0,1.50
+255.0,0.90
+270.0,0.65
+285.0,0.55
+300.0,0.60
+315.0,0.80
+330.0,1.00
+345.0,1.10
+

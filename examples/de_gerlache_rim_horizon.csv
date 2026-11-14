@@ -1,0 +1,26 @@
+# Horizon Profile: Illustrative de Gerlache Rim Vicinity
+# DEM Source: LRO LOLA DEM Reference Topography
+# Reference Surface: Lunar Sphere R = 1737.4 km
+# Search Radius: 100 km with lunar curvature correction
+# Observer Height Above Ground: 2.0 meters
+# Note: User-supplied illustrative profile for prototype testing. Significant terrain masking toward adjacent peaks.
+azimuth_deg,horizon_elevation_deg
+0.0,1.80
+20.0,2.10
+40.0,2.50
+60.0,2.20
+80.0,1.70
+100.0,1.30
+120.0,1.10
+140.0,1.40
+160.0,1.90
+180.0,2.40
+200.0,2.80
+220.0,2.50
+240.0,1.90
+260.0,1.40
+280.0,1.20
+300.0,1.30
+320.0,1.50
+340.0,1.70
+

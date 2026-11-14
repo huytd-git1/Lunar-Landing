@@ -1,0 +1,32 @@
+# Horizon Profile: Illustrative Malapert Mountain Vicinity
+# DEM Source: LRO LOLA DEM Reference Topography
+# Reference Surface: Lunar Sphere R = 1737.4 km
+# Search Radius: 150 km with lunar curvature correction
+# Observer Height Above Ground: 2.0 meters
+# Note: User-supplied illustrative profile for prototype testing. Prominent northern clearance towards Earth.
+azimuth_deg,horizon_elevation_deg
+0.0,0.10
+15.0,0.15
+30.0,0.30
+45.0,0.60
+60.0,0.95
+75.0,1.30
+90.0,1.80
+105.0,2.20
+120.0,2.60
+135.0,2.90
+150.0,3.25
+165.0,3.40
+180.0,3.10
+195.0,2.75
+210.0,2.30
+225.0,1.75
+240.0,1.20
+255.0,0.70
+270.0,0.35
+285.0,0.15
+300.0,0.05
+315.0,-0.05
+330.0,-0.10
+345.0,0.00
+
