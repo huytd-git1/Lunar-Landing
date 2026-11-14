@@ -8,6 +8,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { CalculatedPoint } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface TimeControlsProps {
   points: CalculatedPoint[];
@@ -28,13 +29,14 @@ export const TimeControls: React.FC<TimeControlsProps> = ({
   playbackSpeed,
   onSpeedChange,
 }) => {
+  const { t } = useLanguage();
   const currentPoint = points[activeIndex] || points[0];
 
   // Playback loop
   useEffect(() => {
     if (!isPlaying || points.length === 0) return;
 
-    // interval speed mapping: 1x = 600ms, 5x = 250ms, 10x = 120ms, 30x = 50ms, 60x = 25ms
+    // interval speed mapping: 1x = 500ms, 5x = 200ms, 10x = 100ms, 30x = 40ms, 60x = 20ms
     const intervalMs =
       playbackSpeed === 1
         ? 500
@@ -95,7 +97,7 @@ export const TimeControls: React.FC<TimeControlsProps> = ({
             onClick={() => onSelectIndex(Math.max(0, activeIndex - 1))}
             disabled={activeIndex === 0}
             className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 disabled:opacity-40 transition"
-            title="Step backward one interval (-30m)"
+            title={t.stepBackBtn}
           >
             <SkipBack className="w-4 h-4" />
           </button>
@@ -104,17 +106,21 @@ export const TimeControls: React.FC<TimeControlsProps> = ({
           <button
             type="button"
             onClick={onTogglePlay}
-            className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center space-x-1.5 shadow-md shadow-cyan-500/20 transition"
+            className={`px-4 py-1.5 rounded font-bold text-xs flex items-center space-x-1.5 shadow transition ${
+              isPlaying
+                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'
+            }`}
           >
             {isPlaying ? (
               <>
                 <Pause className="w-4 h-4 fill-current" />
-                <span className="text-xs">PAUSE</span>
+                <span>{t.pauseBtn}</span>
               </>
             ) : (
               <>
                 <Play className="w-4 h-4 fill-current" />
-                <span className="text-xs">PLAY</span>
+                <span>{t.playBtn}</span>
               </>
             )}
           </button>
@@ -122,27 +128,27 @@ export const TimeControls: React.FC<TimeControlsProps> = ({
           {/* Step Forward (+1) */}
           <button
             type="button"
-            onClick={() =>
-              onSelectIndex(Math.min(points.length - 1, activeIndex + 1))
-            }
+            onClick={() => onSelectIndex(Math.min(points.length - 1, activeIndex + 1))}
             disabled={activeIndex >= points.length - 1}
             className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 disabled:opacity-40 transition"
-            title="Step forward one interval (+30m)"
+            title={t.stepForwardBtn}
           >
             <SkipForward className="w-4 h-4" />
           </button>
 
-          {/* Playback Speed Selector */}
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded p-0.5 ml-2">
+          {/* Speed Selector */}
+          <div className="flex items-center space-x-1 pl-2 border-l border-slate-800">
+            <span className="text-[11px] text-slate-400 hidden sm:inline">{t.speedLabel}:</span>
             {speedOptions.map((spd) => (
               <button
                 key={spd}
                 type="button"
                 onClick={() => onSpeedChange(spd)}
-                className={`px-2 py-0.5 text-[11px] font-mono rounded transition ${playbackSpeed === spd
-                    ? 'bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono font-medium transition ${
+                  playbackSpeed === spd
+                    ? 'bg-cyan-950 text-cyan-300 border border-cyan-500/50'
+                    : 'text-slate-400 hover:text-white bg-slate-900 border border-slate-800'
+                }`}
               >
                 {spd}x
               </button>
@@ -150,37 +156,29 @@ export const TimeControls: React.FC<TimeControlsProps> = ({
           </div>
         </div>
 
-        {/* Current Mission Timestamp & MET Display */}
-        <div className="flex items-center space-x-4 font-mono text-xs w-full md:w-auto justify-center md:justify-end">
-          <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-md flex items-center space-x-2">
-            <Clock className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="text-white font-semibold tracking-wide">
-              {currentPoint ? currentPoint.rawTime : '0000-00-00 00:00'} UTC
-            </span>
+        {/* Current Active Timestamp and MET Display */}
+        <div className="flex items-center space-x-3 text-xs font-mono">
+          <div className="flex items-center space-x-1.5 bg-slate-900/90 border border-slate-800 px-3 py-1 rounded-md text-amber-300">
+            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="font-semibold">{currentPoint?.rawTime || '2026-Nov-15 00:00'} UTC</span>
           </div>
 
-          <div className="bg-cyan-950/60 border border-cyan-500/30 px-3 py-1.5 rounded-md text-cyan-300 font-bold tracking-wide">
+          <div className="bg-cyan-950/50 border border-cyan-700/40 px-2.5 py-1 rounded-md text-cyan-300 font-semibold text-[11px]">
             {computeMET()}
           </div>
         </div>
       </div>
 
-      {/* Synchronized Slider Scrub Track */}
-      <div className="flex items-center space-x-3 pt-1">
-        <span className="text-[10px] text-slate-500 font-mono">0h</span>
+      {/* Scrub Slider */}
+      <div className="w-full flex items-center space-x-2 pt-1">
         <input
           type="range"
           min="0"
           max={Math.max(0, points.length - 1)}
           value={activeIndex}
           onChange={(e) => onSelectIndex(parseInt(e.target.value) || 0)}
-          className="w-full accent-cyan-400 cursor-pointer h-2 bg-slate-800 rounded-lg appearance-none"
+          className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 focus:outline-none"
         />
-        <span className="text-[10px] text-slate-500 font-mono">
-          {points.length > 0
-            ? `${Math.round(((points.length - 1) * (currentPoint.stepMinutes || 30)) / 60)}h`
-            : '168h'}
-        </span>
       </div>
     </div>
   );

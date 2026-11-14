@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MissionSettings } from '../types';
 import { Calendar, Play, RefreshCw, AlertCircle, Sun, Zap } from 'lucide-react';
 import { PanelOrientationType } from '../services/power';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface MissionSettingsPanelProps {
   settings: MissionSettings;
@@ -22,6 +23,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
   onClearError,
   onUseFallback,
 }) => {
+  const { t } = useLanguage();
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   // Compute total sample count per site
@@ -42,11 +44,11 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
         <div className="flex items-center space-x-2">
           <Calendar className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-            Mission Timeline Settings
+            {t.missionSettingsTitle}
           </h2>
         </div>
         <span className="text-[11px] text-cyan-400 font-mono">
-          {totalSamples} Samples / Site
+          {totalSamples} {t.samplesPerSite}
         </span>
       </div>
 
@@ -54,7 +56,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
         {/* Start Date & Time */}
         <div>
           <label className="block text-slate-400 text-[11px] font-medium mb-1">
-            Mission Start Timestamp (UTC)
+            {t.startTimeLabel}
           </label>
           <input
             type="text"
@@ -71,7 +73,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className="block text-slate-400 text-[11px] font-medium mb-1">
-              Duration (Earth Days)
+              {t.durationLabel}
             </label>
             <input
               type="number"
@@ -86,12 +88,12 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
               }
               className="w-full bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
             />
-            <span className="text-[10px] text-slate-500 mt-0.5 block">Max 14 days</span>
+            <span className="text-[10px] text-slate-500 mt-0.5 block">{t.maxDaysHint}</span>
           </div>
 
           <div>
             <label className="block text-slate-400 text-[11px] font-medium mb-1">
-              Sampling Interval
+              {t.samplingIntervalLabel}
             </label>
             <select
               value={settings.stepSize}
@@ -100,10 +102,10 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
               }
               className="w-full bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
             >
-              <option value="15m">15 Minutes</option>
-              <option value="30m">30 Minutes (Default)</option>
-              <option value="1h">1 Hour</option>
-              <option value="2h">2 Hours</option>
+              <option value="15m">{t.min15}</option>
+              <option value="30m">{t.min30}</option>
+              <option value="1h">{t.hour1}</option>
+              <option value="2h">{t.hour2}</option>
             </select>
           </div>
         </div>
@@ -113,10 +115,10 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-slate-300 text-[11px] font-semibold flex items-center gap-1.5">
               <Sun className="w-3.5 h-3.5 text-amber-400" />
-              <span>Solar Illumination Model</span>
+              <span>{t.solarModelLabel}</span>
             </span>
             <span className="text-[10px] text-amber-400 font-mono">
-              {settings.solarModel === 'finite_disc' ? 'Gläser 2014 Disc' : 'Center Point'}
+              {settings.solarModel === 'finite_disc' ? 'Gläser 2014' : 'Point'}
             </span>
           </div>
 
@@ -130,7 +132,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
               }`}
             >
-              Finite Disc Model (f_sun)
+              {t.finiteDiscOption}
             </button>
             <button
               type="button"
@@ -141,14 +143,14 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                   : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
               }`}
             >
-              Point-Object Model
+              {t.pointModelOption}
             </button>
           </div>
 
           {settings.solarModel === 'finite_disc' && (
             <div className="pt-1">
               <label className="block text-slate-400 text-[10px] mb-1">
-                Sunlit Threshold Criterion (f_min):
+                {t.sunlitCriterionLabel}
               </label>
               <select
                 value={settings.sunlitThreshold}
@@ -160,10 +162,10 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                 }
                 className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
               >
-                <option value={0.0}>Any Part Visible (f_sun &gt; 0%)</option>
-                <option value={0.1}>10% Disc Area (f_sun &gt;= 10%)</option>
-                <option value={0.5}>Half Disc Visible (f_sun &gt;= 50%)</option>
-                <option value={1.0}>Full Disc Visible (f_sun = 100%)</option>
+                <option value={0.0}>{t.anyVisibleOption}</option>
+                <option value={0.1}>{t.partial10Option}</option>
+                <option value={0.5}>{t.halfDiscOption}</option>
+                <option value={1.0}>{t.fullDiscOption}</option>
               </select>
             </div>
           )}
@@ -178,7 +180,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Photovoltaic Power Config (Gläser 2014)</span>
+              <span>{t.pvConfigToggle}</span>
             </span>
             <span className="text-slate-500 text-xs">{showAdvanced ? '▲' : '▼'}</span>
           </button>
@@ -187,7 +189,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
             <div className="mt-2.5 pt-2 border-t border-slate-800 space-y-2 text-[11px]">
               <div>
                 <label className="block text-slate-400 text-[10px] mb-1">
-                  Solar Array Orientation
+                  {t.pvOrientationLabel}
                 </label>
                 <select
                   value={settings.solarPanel?.orientation || 'tracking_vertical'}
@@ -203,17 +205,17 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                   className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
                 >
                   <option value="tracking_vertical">
-                    Azimuth-Tracking Vertical (Polar Mast Optimal)
+                    {t.pvTrackingVertical}
                   </option>
-                  <option value="fixed_vertical">Fixed Vertical (Facing North)</option>
-                  <option value="horizontal">Horizontal Flat (Rover Deck)</option>
+                  <option value="fixed_vertical">{t.pvFixedVertical}</option>
+                  <option value="horizontal">{t.pvHorizontalFlat}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-slate-400 text-[10px] mb-1">
-                    Array Area (m²)
+                    {t.arrayAreaLabel}
                   </label>
                   <input
                     type="number"
@@ -235,7 +237,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                 </div>
                 <div>
                   <label className="block text-slate-400 text-[10px] mb-1">
-                    Cell Efficiency (%)
+                    {t.cellEfficiencyLabel}
                   </label>
                   <input
                     type="number"
@@ -264,7 +266,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-slate-400 text-[11px] font-medium">
-              Earth RF Clearance Angle Margin
+              {t.earthClearanceLabel}
             </label>
             <span className="text-[11px] text-cyan-400 font-mono">
               +{settings.earthClearanceAngle.toFixed(1)}°
@@ -287,7 +289,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
             />
           </div>
           <span className="text-[10px] text-slate-500 mt-0.5 block">
-            Extra elevation margin required above terrain for direct-to-Earth radio link
+            {t.earthClearanceDesc}
           </span>
         </div>
 
@@ -297,7 +299,7 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
             <div className="flex items-start space-x-2">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <div>
-                <div className="font-semibold text-red-300">Analysis Error</div>
+                <div className="font-semibold text-red-300">{t.analysisErrorTitle}</div>
                 <div className="text-[11px] text-red-200/90 leading-tight">
                   {analysisError}
                 </div>
@@ -309,14 +311,14 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
                 onClick={onClearError}
                 className="text-[11px] text-slate-400 hover:text-slate-200"
               >
-                Dismiss
+                {t.dismissBtn}
               </button>
               <button
                 type="button"
                 onClick={onUseFallback}
                 className="text-[11px] bg-red-900/80 hover:bg-red-800 text-red-100 px-2 py-0.5 rounded font-medium transition"
               >
-                Use Bundled Offline Dataset
+                {t.useFallbackBtn}
               </button>
             </div>
           </div>
@@ -336,18 +338,18 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
           {isAnalyzing ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-              <span>Querying JPL Horizons Ephemerides...</span>
+              <span>{t.queryingHorizons}</span>
             </>
           ) : (
             <>
               <Play className="w-4 h-4 fill-current" />
-              <span>Analyze Candidate Sites</span>
+              <span>{t.analyzeBtn}</span>
             </>
           )}
         </button>
 
         <div className="text-[10px] text-slate-500 text-center font-mono">
-          JPL Horizons Target 10 (Sun) & 399 (Earth) | Lunar Geodetic
+          {t.horizonsFooter}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalculatedPoint } from '../types';
 import { TrendingUp, Sun, Zap } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface TimeSeriesChartProps {
   points: CalculatedPoint[];
@@ -15,6 +16,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
   activeIndex,
   onSelectIndex,
 }) => {
+  const { t } = useLanguage();
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<ChartViewMode>('elevation');
 
@@ -171,7 +173,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           <div className="flex items-center space-x-1.5">
             <TrendingUp className="w-4 h-4 text-cyan-400" />
             <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-              Time-Series Analysis
+              {t.timeSeriesTitle}
             </h2>
           </div>
 
@@ -185,7 +187,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Elevation Angles (°)
+              {t.tabElevation}
             </button>
             <button
               onClick={() => setViewMode('disc_fraction')}
@@ -196,7 +198,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
               }`}
             >
               <Sun className="w-3 h-3 text-amber-400" />
-              <span>Visible Disc f_sun (%)</span>
+              <span>{t.tabDisc}</span>
             </button>
             <button
               onClick={() => setViewMode('power')}
@@ -207,7 +209,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
               }`}
             >
               <Zap className="w-3 h-3 text-amber-400" />
-              <span>PV Power (Watts)</span>
+              <span>{t.tabPower}</span>
             </button>
           </div>
         </div>
@@ -217,32 +219,32 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-0.5 bg-amber-400 inline-block" />
-              <span className="text-amber-300">Sun Elevation</span>
+              <span className="text-amber-300">{t.legendSunEl}</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-0.5 bg-blue-400 inline-block" />
-              <span className="text-blue-300">Earth Elevation</span>
+              <span className="text-blue-300">{t.legendEarthEl}</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-0.5 bg-emerald-500/80 inline-block border-b border-dashed border-emerald-400" />
-              <span className="text-emerald-400">Directional Horizon</span>
+              <span className="text-emerald-400">{t.legendDirHorizon}</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-3 h-0.5 bg-cyan-400/60 inline-block border-b border-dashed border-cyan-400" />
-              <span className="text-cyan-400">0° Reference</span>
+              <span className="text-cyan-400">{t.legendZeroRef}</span>
             </div>
           </div>
         )}
         {viewMode === 'disc_fraction' && (
           <div className="flex items-center gap-3 text-xs font-mono text-amber-300">
             <span className="w-3 h-1.5 bg-amber-400/40 inline-block border border-amber-400 rounded-sm" />
-            <span>Visible Solar Disc Area Fraction f_sun(x) ∈ [0, 1]</span>
+            <span>{t.legendDiscFrac}</span>
           </div>
         )}
         {viewMode === 'power' && (
           <div className="flex items-center gap-3 text-xs font-mono text-amber-300">
             <span className="w-3 h-1.5 bg-amber-500/30 inline-block border border-amber-500 rounded-sm" />
-            <span>Instantaneous Photovoltaic Power P_PV(t) [W]</span>
+            <span>{t.legendPvPower}</span>
           </div>
         )}
       </div>

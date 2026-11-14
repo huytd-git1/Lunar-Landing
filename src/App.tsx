@@ -28,8 +28,10 @@ import { HowItWorksModal } from './components/HowItWorksModal';
 import { HorizonImportModal } from './components/HorizonImportModal';
 import { ResearchModal } from './components/ResearchModal';
 import { HeightComparisonModal } from './components/HeightComparisonModal';
+import { useLanguage } from './i18n/LanguageContext';
 
 export const App: React.FC = () => {
+  const { t } = useLanguage();
   // 1. Mission and Site Configurations
   const [sites, setSites] = useState<SiteConfig[]>(DEFAULT_SITES);
   const [selectedSiteId, setSelectedSiteId] = useState<string>('site-a');
@@ -365,7 +367,7 @@ export const App: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-[#0B1120] px-4 py-3 text-center text-xs text-slate-500 font-mono">
-        Lunar Landing Site Navigator — Prototype for the NASA Space Apps Challenge | NASA JPL Horizons & LOLA Topography
+        {t.footerText}
       </footer>
 
       {/* Modals */}

@@ -59,3 +59,4 @@ describe('Multi-Height Observer Analysis (Barker et al. 2021 & Figure 14)', () =
     expect(res10m.longestDarkPeriodHours).toBeLessThanOrEqual(res1m.longestDarkPeriodHours);
   });
 });
+

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CalculatedPoint, SiteMetrics } from '../types';
 import { Eye, Sun, Globe, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface VisibilityTimelineProps {
   points: CalculatedPoint[];
@@ -15,6 +16,7 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
   activeIndex,
   onSelectIndex,
 }) => {
+  const { t } = useLanguage();
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   if (!points || points.length === 0) {
@@ -24,7 +26,7 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
   const width = 1000;
   const rowHeight = 26;
   const rowGap = 6;
-  const margin = { top: 15, right: 30, bottom: 25, left: 110 };
+  const margin = { top: 15, right: 30, bottom: 25, left: 130 };
   const plotWidth = width - margin.left - margin.right;
   const totalHeight = margin.top + 3 * rowHeight + 2 * rowGap + margin.bottom;
 
@@ -38,16 +40,16 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
   const rows = [
     {
       id: 'sun',
-      label: '1. Sun Visible',
+      label: t.rowSun,
       icon: Sun,
       color: '#F59E0B',
       pct: metrics.sunVisiblePct,
       hours: metrics.sunVisibleHours,
-      check: (p: CalculatedPoint) => p.sunVisible,
+      check: (p: CalculatedPoint) => p.sunlitState || p.sunVisible,
     },
     {
       id: 'earth',
-      label: '2. Earth Visible',
+      label: t.rowEarth,
       icon: Globe,
       color: '#3B82F6',
       pct: metrics.earthVisiblePct,
@@ -56,7 +58,7 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
     },
     {
       id: 'both',
-      label: '3. Both Visible',
+      label: t.rowBoth,
       icon: CheckCircle2,
       color: '#10B981',
       pct: metrics.bothVisiblePct,
@@ -85,36 +87,32 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
     }
   };
 
-  const displayPoint =
-    hoverIndex !== null ? points[hoverIndex] : points[activeIndex] || points[0];
-
   return (
     <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col justify-between">
-      {/* Header */}
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 border-b border-slate-800 gap-2">
         <div className="flex items-center space-x-2">
           <Eye className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-            Operational Visibility Windows (3-Row Timeline)
+            {t.timelineTitle}
           </h2>
         </div>
 
-        {/* Multi-metric stats badges */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40">
-            ☀️ Sun: {metrics.sunVisiblePct}% ({metrics.sunVisibleHours}h)
-          </span>
-          <span className="px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-500/40">
-            🌍 Earth: {metrics.earthVisiblePct}% ({metrics.earthVisibleHours}h)
-          </span>
-          <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold">
-            ⚡ Both: {metrics.bothVisiblePct}% ({metrics.bothVisibleHours}h)
-          </span>
+        {/* Legend for shading */}
+        <div className="flex items-center space-x-4 text-xs font-mono text-slate-400">
+          <div className="flex items-center space-x-1.5">
+            <span className="w-3 h-3 rounded-sm bg-amber-500 inline-block" />
+            <span className="text-slate-300">{t.visibleLabel}</span>
+          </div>
+          <div className="flex items-center space-x-1.5">
+            <span className="w-3 h-3 rounded-sm bg-slate-900 border border-slate-700 inline-block" />
+            <span className="text-slate-400">{t.obstructedLabel}</span>
+          </div>
         </div>
       </div>
 
-      {/* SVG 3-Row Strip */}
-      <div className="relative py-2 overflow-hidden cursor-pointer">
+      {/* SVG Multi-Row Timeline */}
+      <div className="relative py-2 overflow-hidden cursor-crosshair">
         <svg
           viewBox={`0 0 ${width} ${totalHeight}`}
           className="w-full h-auto select-none"
@@ -123,29 +121,29 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
           onClick={handleClick}
         >
           <defs>
-            {/* Pattern for Obstructed (Accessibility: dual-encoded hatching) */}
+            {/* Pattern for Obstructed status: diagonal hatching */}
             <pattern
               id="hatchPattern"
+              patternUnits="userSpaceOnUse"
               width="6"
               height="6"
-              patternTransform="rotate(45 0 0)"
-              patternUnits="userSpaceOnUse"
+              patternTransform="rotate(45)"
             >
               <line x1="0" y1="0" x2="0" y2="6" stroke="#334155" strokeWidth="1.5" />
             </pattern>
-            {/* Pattern for Unknown */}
+            {/* Pattern for Unknown status: cross-hatch */}
             <pattern
               id="unknownPattern"
-              width="6"
-              height="6"
-              patternTransform="rotate(-45 0 0)"
               patternUnits="userSpaceOnUse"
+              width="8"
+              height="8"
             >
-              <line x1="0" y1="0" x2="0" y2="6" stroke="#475569" strokeWidth="1" strokeDasharray="2 2" />
+              <line x1="0" y1="0" x2="8" y2="8" stroke="#475569" strokeWidth="1" />
+              <line x1="8" y1="0" x2="0" y2="8" stroke="#475569" strokeWidth="1" />
             </pattern>
           </defs>
 
-          {/* Render 3 rows */}
+          {/* Render Timeline Rows */}
           {rows.map((row, rowIdx) => {
             const y = margin.top + rowIdx * (rowHeight + rowGap);
             return (
@@ -228,77 +226,61 @@ export const VisibilityTimeline: React.FC<VisibilityTimelineProps> = ({
             }
             const yBottom = margin.top + 3 * rowHeight + 2 * rowGap;
 
-            return ticks.map((t, idx) => (
+            return ticks.map((tick, idx) => (
               <g key={idx}>
                 <line
-                  x1={t.x}
+                  x1={tick.x}
                   y1={yBottom}
-                  x2={t.x}
+                  x2={tick.x}
                   y2={yBottom + 4}
                   stroke="#475569"
                   strokeWidth="1"
                 />
                 <text
-                  x={t.x}
+                  x={tick.x}
                   y={yBottom + 16}
                   textAnchor="middle"
                   fill="#64748B"
                   fontSize="9"
                   fontFamily="monospace"
                 >
-                  {t.label}
+                  {tick.label}
                 </text>
               </g>
             ));
           })()}
 
-          {/* Active Playback Scrubber Line */}
+          {/* Active / Hover Cursor Line */}
           <line
-            x1={idxToX(activeIndex)}
-            y1={margin.top - 4}
-            x2={idxToX(activeIndex)}
-            y2={margin.top + 3 * rowHeight + 2 * rowGap + 4}
+            x1={idxToX(hoverIndex !== null ? hoverIndex : activeIndex)}
+            y1={margin.top - 5}
+            x2={idxToX(hoverIndex !== null ? hoverIndex : activeIndex)}
+            y2={margin.top + 3 * rowHeight + 2 * rowGap + 5}
             stroke="#00E5FF"
-            strokeWidth="2.2"
-            opacity="0.95"
+            strokeWidth="1.5"
+            strokeDasharray={hoverIndex !== null ? 'none' : '3 2'}
+            opacity="0.85"
           />
-          <circle
-            cx={idxToX(activeIndex)}
-            cy={margin.top - 4}
-            r="4"
-            fill="#00E5FF"
-          />
-
-          {/* Hover indicator */}
-          {hoverIndex !== null && hoverIndex !== activeIndex && (
-            <line
-              x1={idxToX(hoverIndex)}
-              y1={margin.top}
-              x2={idxToX(hoverIndex)}
-              y2={margin.top + 3 * rowHeight + 2 * rowGap}
-              stroke="#64748B"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-            />
-          )}
         </svg>
       </div>
 
-      {/* Accessibility Shading Legend & Status */}
-      <div className="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between text-[11px] text-slate-400 gap-2">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3.5 h-3 rounded bg-emerald-500 inline-block" />
-            <span className="text-slate-300">Visible (Solid)</span>
+      {/* Summary Metrics Badges below timeline */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-800 text-xs font-mono">
+        {rows.map((r) => (
+          <div
+            key={r.id}
+            className="p-2 rounded bg-slate-900/60 border border-slate-800 flex items-center justify-between"
+          >
+            <div className="flex items-center space-x-2">
+              <r.icon className="w-3.5 h-3.5" style={{ color: r.color }} />
+              <span className="text-slate-300 font-sans text-[11px] truncate">{r.label}</span>
+            </div>
+            <div className="text-right">
+              <span className="font-bold text-white text-[11px]">{r.pct}%</span>
+              <span className="text-slate-400 text-[10px] ml-1">({r.hours}h)</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3.5 h-3 rounded bg-slate-900 border border-slate-700 pattern-hatched inline-block" />
-            <span className="text-slate-400">Obstructed / Terrain Masked (Hatched)</span>
-          </div>
-        </div>
-        <div className="font-mono text-cyan-300">
-          {displayPoint ? `${displayPoint.rawTime} UTC — Sun: ${displayPoint.sunVisible.toUpperCase()} | Earth: ${displayPoint.earthVisible.toUpperCase()}` : 'Scrub to explore'}
-        </div>
+        ))}
       </div>
     </div>
   );

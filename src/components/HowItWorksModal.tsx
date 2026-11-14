@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, BookOpen, Compass, Sun, Globe, AlertTriangle, ExternalLink } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HowItWorksModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -23,10 +25,10 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-white">
-                How It Works: Lunar Polar Ephemerides & Horizon Analysis
+                {t.hiwModalTitle}
               </h2>
               <p className="text-xs text-slate-400">
-                Aerospace engineering principles, coordinate frames, and scientific caveats
+                {t.hiwModalSub}
               </p>
             </div>
           </div>
@@ -45,14 +47,13 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-cyan-300 flex items-center space-x-1.5">
               <Sun className="w-4 h-4 text-amber-400" />
-              <span>1. Lunar Polar Geometry & Grazing Solar Illumination</span>
+              <span>{t.hiwSec1Title}</span>
             </h3>
             <p>
-              Unlike Earth&apos;s axial tilt of 23.44°, the Moon&apos;s rotational axis is tilted only{' '}
-              <strong className="text-white">1.5424°</strong> relative to the ecliptic plane. Consequently, at the lunar south pole (latitudes &le; 85°S), the Sun never rises high in the sky. Instead, it slowly circles the local horizon over a <strong className="text-white">29.53-day synodic lunar day</strong>, staying within approximately &plusmn;1.5° of the horizontal plane.
+              {t.hiwSec1P1}
             </p>
             <p>
-              Because the solar rays arrive at near-horizontal grazing angles, even modest topographical elevations (such as crater rims and massifs) cast extremely long shadows. Elevated ridges (like Shackleton&apos;s Connecting Ridge) experience extended periods of near-continuous illumination, while depressed crater floors (like Shackleton, Faustini, and Shoemaker) remain in perpetual darkness as <strong className="text-white">Permanently Shadowed Regions (PSRs)</strong>.
+              {t.hiwSec1P2}
             </p>
           </div>
 
@@ -60,13 +61,13 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-cyan-300 flex items-center space-x-1.5">
               <Globe className="w-4 h-4 text-blue-400" />
-              <span>2. Earth Libration & Communications Line of Sight</span>
+              <span>{t.hiwSec2Title}</span>
             </h3>
             <p>
-              The Moon is tidally locked to Earth, so the same lunar hemisphere predominantly faces Earth. However, due to orbital eccentricity and tilt, the Moon undergoes <strong className="text-white">optical and physical libration</strong> of approximately &plusmn;6.7° in latitude and &plusmn;8.0° in longitude.
+              {t.hiwSec2P1}
             </p>
             <p>
-              As seen by an astronaut or lander near the south pole, Earth does not rise and set daily. Instead, it traces out a slow <strong className="text-white">27.3-day libration oval</strong> in the sky, oscillating a few degrees above and below the horizon. On the Earth-facing meridian (0°E), Earth remains around +4° to +5° elevation. Further toward the farside (e.g. 160°E), Earth periodically dips below local topography, creating direct communications blackouts unless supported by lunar relay orbiters.
+              {t.hiwSec2P2}
             </p>
           </div>
 
@@ -74,7 +75,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-cyan-300 flex items-center space-x-1.5">
               <Compass className="w-4 h-4 text-emerald-400" />
-              <span>3. Coordinate Conventions & Horizons Specification</span>
+              <span>{t.hiwSec3Title}</span>
             </h3>
             <ul className="list-disc list-inside space-y-1 text-slate-300 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
               <li>
@@ -98,16 +99,16 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           {/* Section 4: Point-Object Approximation & Circular Interpolation */}
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-cyan-300">
-              4. Horizon Modeling & Circular Interpolation
+              {t.hiwSec4Title}
             </h3>
             <p>
-              Visibility is calculated using the documented point-object approximation:
+              {t.hiwSec4Desc}
             </p>
             <div className="bg-slate-900 p-2.5 rounded font-mono text-[11px] text-cyan-300 border border-slate-800 text-center">
               visible(t) = object_elevation(t) &gt; horizon_elevation(object_azimuth(t))
             </div>
             <p>
-              In <strong className="text-white">Geometric Mode</strong>, the horizon elevation is fixed at 0.0°. In <strong className="text-white">Terrain Mode</strong>, the local horizon profile is evaluated using circular linear interpolation across the 0°/360° seam to ensure continuous topography wrapping.
+              {t.hiwSec4Modes}
             </p>
           </div>
 
@@ -115,20 +116,20 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           <div className="p-3.5 bg-amber-950/30 border border-amber-500/40 rounded-xl space-y-2">
             <div className="flex items-center space-x-2 text-amber-300 font-semibold text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Scientific Caveats & Practical Engineering Limitations</span>
+              <span>{t.hiwSec5Title}</span>
             </div>
             <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-[11px]">
               <li>
-                <strong className="text-white">Sun Visibility &ne; Electrical Power Generation:</strong> Actual power output depends on solar array orientation, cosine of incidence angle, temperature coefficients, dust accumulation, and terrain-reflected radiation (albedo).
+                {t.hiwCaveat1}
               </li>
               <li>
-                <strong className="text-white">Earth-Center Visibility &ne; Ground Station Line-of-Sight:</strong> Earth rotates once every 24 hours. Visibility of the Earth center does not guarantee line-of-sight to a specific Deep Space Network (DSN) antenna complex (Goldstone, Madrid, or Canberra).
+                {t.hiwCaveat2}
               </li>
               <li>
-                <strong className="text-white">Geometric Line-of-Sight &ne; RF Radio Link:</strong> Direct line-of-sight is necessary but not sufficient. Multipath fading caused by regolith reflections, RF link margins, and antenna pointing error must be accounted for.
+                {t.hiwCaveat3}
               </li>
               <li>
-                <strong className="text-white">Exploratory Prototype Scope:</strong> This prototype is built for preliminary exploration and candidate site comparison for the NASA Space Apps Challenge, not for operational flight descent trajectory guidance or human landing system certification.
+                {t.hiwCaveat4}
               </li>
             </ul>
           </div>
@@ -136,7 +137,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
           {/* Section 6: Official Reference Resources */}
           <div className="pt-2 border-t border-slate-800 space-y-2">
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Official NASA & CSA Resources
+              {t.hiwSec6Title}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
               <a
@@ -186,7 +187,7 @@ export const HowItWorksModal: React.FC<HowItWorksModalProps> = ({
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs transition"
           >
-            Close Guide
+            {t.closeBtn}
           </button>
         </div>
       </div>

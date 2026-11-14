@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ResearchFigure {
   id: string;
@@ -153,6 +154,7 @@ interface ResearchModalProps {
 }
 
 export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose }) => {
+  const { t, language } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedFig, setSelectedFig] = useState<ResearchFigure>(RESEARCH_FIGURES[2]); // Default to solar disc fig-03
 
@@ -162,6 +164,15 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
     selectedCategory === 'all'
       ? RESEARCH_FIGURES
       : RESEARCH_FIGURES.filter((f) => f.category === selectedCategory);
+
+  const categories = [
+    { id: 'all', label: t.researchCatAll },
+    { id: 'solar_disc', label: t.researchCatSolar },
+    { id: 'horizon', label: t.researchCatHorizon },
+    { id: 'height', label: t.researchCatHeight },
+    { id: 'validation', label: t.researchCatValidation },
+    { id: 'multicriteria', label: t.researchCatMulti },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
@@ -174,11 +185,11 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
                 SCIENTIFIC FOUNDATIONS
               </span>
               <h2 className="text-xl font-bold text-cyan-300">
-                Literature Review & Research Foundations (8 NASA/ESA Papers)
+                {t.researchModalTitle}
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Methodological references from JPL, NASA LRO, ESA, and peer-reviewed planetary journals
+              {t.researchModalSub}
             </p>
           </div>
           <button
@@ -191,14 +202,7 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
 
         {/* Categories Bar */}
         <div className="flex flex-wrap gap-2 px-6 py-3 border-b border-slate-800 bg-[#091124] text-xs">
-          {[
-            { id: 'all', label: 'All 10 Literature Figures' },
-            { id: 'solar_disc', label: 'Finite Solar Disc & Illumination' },
-            { id: 'horizon', label: 'Horizon & Curvature Geometry' },
-            { id: 'height', label: 'Observer Mast Height Study' },
-            { id: 'validation', label: 'Shadow Mismatch Validation' },
-            { id: 'multicriteria', label: 'Multi-Criteria Landing Selection' },
-          ].map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
@@ -234,14 +238,14 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
                 />
               </div>
               <div className="w-full mt-2 text-center text-xs text-slate-400 italic">
-                {selectedFig.titleEn}
+                {language === 'vi' ? selectedFig.titleVi : selectedFig.titleEn}
               </div>
             </div>
 
             {/* Explanation box */}
             <div className="bg-[#081024] border border-slate-800 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-cyan-300 mb-1 flex items-center gap-2">
-                <span>📘</span> {selectedFig.titleVi}
+                <span>📘</span> {language === 'vi' ? selectedFig.titleVi : selectedFig.titleEn}
               </h4>
               <p className="text-xs text-slate-300 leading-relaxed mt-2">
                 {selectedFig.descriptionVi}
@@ -265,7 +269,7 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
           {/* Right Figure List (5 cols) */}
           <div className="lg:col-span-5 flex flex-col gap-2 overflow-y-auto max-h-[580px] pr-1">
             <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-400 mb-1">
-              Select Literature Figure ({filteredFigures.length}):
+              {t.researchSelectTitle} ({filteredFigures.length}):
             </h3>
             {filteredFigures.map((fig) => {
               const isSelected = selectedFig.id === fig.id;
@@ -288,7 +292,7 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
                     </span>
                   </div>
                   <div className="text-xs font-medium text-slate-200 mt-1 line-clamp-1">
-                    {fig.titleVi}
+                    {language === 'vi' ? fig.titleVi : fig.titleEn}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-1 line-clamp-2">
                     {fig.descriptionVi}
@@ -308,10 +312,11 @@ export const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose })
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold transition-colors"
           >
-            Close Viewer
+            {t.closeBtn}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

@@ -10,6 +10,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { generateEventWindowsCsv, generateTimeSeriesCsv, downloadFile } from '../services/exportData';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ComparisonTableProps {
   results: Record<string, SiteAnalysisResult>;
@@ -37,6 +38,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
   onExportJson,
   onOpenHeightStudy,
 }) => {
+  const { t } = useLanguage();
   const [sortField, setSortField] = useState<SortField>('sunVisiblePct');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
 
@@ -94,11 +96,11 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
           <div className="flex items-center space-x-2">
             <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
             <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-              Candidate Site Performance Matrix
+              {t.matrixTitle}
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Compare illumination windows, finite solar disc fraction, PV power, and direct Earth line-of-sight
+            {t.matrixSub}
           </p>
         </div>
 
@@ -110,7 +112,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
             title="Download full analysis as JSON"
           >
             <FileJson className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Export Mission JSON</span>
+            <span>{t.exportJsonButton}</span>
           </button>
         </div>
       </div>
@@ -125,17 +127,17 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white"
               >
                 <div className="flex items-center space-x-1">
-                  <span>Candidate Site</span>
+                  <span>{t.colSite}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
-              <th className="py-2.5 px-3">Horizon Mode</th>
+              <th className="py-2.5 px-3">{t.colHorizonMode}</th>
               <th
                 onClick={() => handleSort('sunVisiblePct')}
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Sunlit %</span>
+                  <span>{t.colSunlitPct}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -144,7 +146,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Mean Disc f̄_sun</span>
+                  <span>{t.colMeanDisc}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -153,7 +155,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Max Dark (LCSP)</span>
+                  <span>{t.colMaxDark}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -162,7 +164,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Max Light (LCIP)</span>
+                  <span>{t.colMaxLight}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -172,7 +174,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
               >
                 <div className="flex items-center justify-end space-x-1">
                   <Zap className="w-3 h-3" />
-                  <span>PV Energy</span>
+                  <span>{t.colPvEnergy}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -181,7 +183,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Earth Vis %</span>
+                  <span>{t.colEarthVisPct}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -190,12 +192,12 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right font-bold text-emerald-400"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Both Vis (h)</span>
+                  <span>{t.colBothVisHrs}</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
-              <th className="py-2.5 px-3 text-center">Trade Study</th>
-              <th className="py-2.5 px-3 text-center">Export</th>
+              <th className="py-2.5 px-3 text-center">{t.colTradeStudy}</th>
+              <th className="py-2.5 px-3 text-center">{t.colExport}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800 font-mono">
@@ -265,7 +267,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                       title="Analyze height sensitivity (1m, 2m, 5m, 10m) from Barker et al. (2021)"
                     >
                       <Sliders className="w-3 h-3 text-cyan-400" />
-                      <span>Mast Study</span>
+                      <span>{t.mastStudyBtn}</span>
                     </button>
                   </td>
                   <td className="py-2.5 px-3 text-center">
@@ -284,7 +286,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                         className="px-1 py-0.5 rounded text-[10px] hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-800 transition"
                         title="Download Event Windows CSV"
                       >
-                        Events
+                        {t.eventsBtn}
                       </button>
                     </div>
                   </td>
@@ -299,34 +301,34 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
       <div className="p-3.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs text-slate-300 space-y-2">
         <div className="flex items-center space-x-2 text-cyan-400 font-semibold uppercase tracking-wider text-[11px]">
           <Lightbulb className="w-4 h-4" />
-          <span>Multi-Criteria Mission Trade-off Analysis</span>
+          <span>{t.tradeOffTitle}</span>
         </div>
         <p className="leading-relaxed text-slate-300 text-[11px]">
-          No lunar landing site is universally &quot;best&quot;. Mission architecture requires balancing competing constraints:
+          {t.tradeOffIntro}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 text-[11px]">
           <div className="p-2.5 bg-slate-950/60 rounded border border-slate-800/80">
             <span className="text-cyan-300 font-semibold block mb-1">
-              Site Alpha (Connecting Ridge)
+              {t.siteAlphaTitle}
             </span>
             <p className="text-slate-400 leading-snug">
-              Elevated ridge offers high cumulative illumination (~88-92%), minimizing battery mass. However, being near 160°E, Earth dips close to or below the horizon during libration, necessitating RF relay satellites or scheduled comms passes.
+              {t.siteAlphaDesc}
             </p>
           </div>
           <div className="p-2.5 bg-slate-950/60 rounded border border-slate-800/80">
             <span className="text-purple-300 font-semibold block mb-1">
-              Site Beta (Malapert Mountain)
+              {t.siteBetaTitle}
             </span>
             <p className="text-slate-400 leading-snug">
-              Positioned on the 0°E Earth-facing meridian, the high massif provides near-continuous line of sight to Earth (~98% visibility), ideal for direct-to-Earth telemetry. However, its lower latitude (-86°S) means deeper seasonal solar drops.
+              {t.siteBetaDesc}
             </p>
           </div>
           <div className="p-2.5 bg-slate-950/60 rounded border border-slate-800/80">
             <span className="text-emerald-300 font-semibold block mb-1">
-              Site Gamma (de Gerlache Rim)
+              {t.siteGammaTitle}
             </span>
             <p className="text-slate-400 leading-snug">
-              Offers direct access to permanently shadowed crater floors for volatile sampling, but rugged local crater rim topography creates intermittent terrain masking periods requiring robust power reserve margins.
+              {t.siteGammaDesc}
             </p>
           </div>
         </div>

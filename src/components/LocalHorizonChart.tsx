@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalculatedPoint, HorizonProfile, SiteConfig } from '../types';
 import { interpolateHorizonElevation } from '../services/horizonProfile';
 import { ZoomIn, ZoomOut, Sun, Globe, Layers, Zap } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LocalHorizonChartProps {
   site: SiteConfig;
@@ -16,6 +17,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
   profile,
   earthClearanceAngle,
 }) => {
+  const { language, t } = useLanguage();
   // Zoom mode: false = full range (-10° to +30°); true = polar zoom (-4° to +8°)
   const [isZoomed, setIsZoomed] = useState<boolean>(true);
   const [hoverAzimuth, setHoverAzimuth] = useState<number | null>(null);
@@ -76,17 +78,17 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
     elevTicks.push(el);
   }
 
-  // Azimuth cardinal ticks
+  // Azimuth cardinal ticks with bilingual labels
   const azTicks = [
-    { az: 0, label: '0° N' },
-    { az: 45, label: '45° NE' },
-    { az: 90, label: '90° E' },
-    { az: 135, label: '135° SE' },
-    { az: 180, label: '180° S' },
-    { az: 225, label: '225° SW' },
-    { az: 270, label: '270° W' },
-    { az: 315, label: '315° NW' },
-    { az: 360, label: '360° N' },
+    { az: 0, label: language === 'vi' ? '0° Bắc' : '0° N' },
+    { az: 45, label: language === 'vi' ? '45° ĐB' : '45° NE' },
+    { az: 90, label: language === 'vi' ? '90° Đông' : '90° E' },
+    { az: 135, label: language === 'vi' ? '135° ĐN' : '135° SE' },
+    { az: 180, label: language === 'vi' ? '180° Nam' : '180° S' },
+    { az: 225, label: language === 'vi' ? '225° TN' : '225° SW' },
+    { az: 270, label: language === 'vi' ? '270° Tây' : '270° W' },
+    { az: 315, label: language === 'vi' ? '315° TB' : '315° NW' },
+    { az: 360, label: language === 'vi' ? '360° Bắc' : '360° N' },
   ];
 
   // Mouse move handler for interactive hover
@@ -117,7 +119,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
           <div className="flex items-center space-x-2">
             <Layers className="w-4 h-4 text-cyan-400" />
             <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-              Local Horizon & Sky Chart
+              {t.skyChartTitle}
             </h2>
             <span
               className="text-[11px] px-2 py-0.5 rounded-full font-medium"
@@ -131,7 +133,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Local topocentric coordinate system: Azimuth [0° to 360°], Elevation [deg]. Finite solar disc model α = 0.266°.
+            {t.skyChartSub}
           </p>
         </div>
 
@@ -148,7 +150,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
             title="Toggle between polar grazing zoom (-4° to +8°) and full sky view (-10° to +30°)"
           >
             {isZoomed ? <ZoomOut className="w-3.5 h-3.5" /> : <ZoomIn className="w-3.5 h-3.5" />}
-            <span>{isZoomed ? 'Polar Zoom (-4° to +8°)' : 'Full View (-10° to +30°)'}</span>
+            <span>{isZoomed ? t.polarZoomBtn : t.fullViewBtn}</span>
           </button>
         </div>
       </div>
@@ -282,7 +284,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                 fontFamily="monospace"
                 opacity="0.9"
               >
-                0.0° Reference Horizon
+                {t.refHorizonLine}
               </text>
             </g>
           )}
@@ -340,18 +342,6 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                       strokeWidth="1.5"
                     />
 
-                    {/* Partial Clipping Shading when intersecting horizon */}
-                    {discFrac > 0 && discFrac < 1.0 && (
-                      <clipPath id="sunDiscPartialClip">
-                        <rect
-                          x={sunX - sunR - 2}
-                          y={sunY - sunR - 2}
-                          width={2 * sunR + 4}
-                          height={(2 * sunR + 4) * (1 - discFrac)}
-                        />
-                      </clipPath>
-                    )}
-
                     {/* Sun rays spikes when lit */}
                     {discFrac > 0.1 &&
                       [0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
@@ -398,7 +388,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                         fontWeight="bold"
                         fontFamily="monospace"
                       >
-                        ☀️ Sun {activePoint.sunElevation >= 0 ? '+' : ''}
+                        ☀️ {t.sunCardTitle} {activePoint.sunElevation >= 0 ? '+' : ''}
                         {activePoint.sunElevation.toFixed(2)}° ({(discFrac * 100).toFixed(0)}%)
                       </text>
                     </g>
@@ -472,7 +462,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                           fontWeight="bold"
                           fontFamily="monospace"
                         >
-                          🌍 Earth {activePoint.earthElevation >= 0 ? '+' : ''}
+                          🌍 {t.earthCardTitle} {activePoint.earthElevation >= 0 ? '+' : ''}
                           {activePoint.earthElevation.toFixed(2)}°
                         </text>
                       </g>
@@ -551,7 +541,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
               <Sun className="w-4 h-4 text-amber-400 shrink-0" />
               <div>
                 <div className="font-semibold text-white flex items-center gap-1.5">
-                  <span>Sun:</span>
+                  <span>{t.sunCardTitle}:</span>
                   <span
                     className={`text-[11px] font-mono uppercase px-1.5 py-0.2 rounded ${
                       activePoint.sunlitState === 'visible' || activePoint.sunVisible === 'visible'
@@ -559,7 +549,9 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                         : 'bg-red-500/20 text-red-300'
                     }`}
                   >
-                    {activePoint.sunlitState || activePoint.sunVisible}
+                    {activePoint.sunlitState === 'visible' || activePoint.sunVisible === 'visible'
+                      ? t.visibleLabel
+                      : t.obstructedLabel}
                   </span>
                   <span className="text-[10px] text-amber-400 font-mono bg-amber-950/60 px-1 py-0.5 rounded">
                     f_sun: {((activePoint.solarVisibleFraction ?? (activePoint.sunVisible === 'visible' ? 1 : 0)) * 100).toFixed(1)}%
@@ -593,7 +585,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
               <Globe className="w-4 h-4 text-blue-400 shrink-0" />
               <div>
                 <div className="font-semibold text-white flex items-center gap-1.5">
-                  <span>Earth:</span>
+                  <span>{t.earthCardTitle}:</span>
                   <span
                     className={`text-[11px] font-mono uppercase px-1.5 py-0.2 rounded ${
                       activePoint.earthVisible === 'visible'
@@ -601,11 +593,11 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                         : 'bg-red-500/20 text-red-300'
                     }`}
                   >
-                    {activePoint.earthVisible}
+                    {activePoint.earthVisible === 'visible' ? t.visibleLabel : t.obstructedLabel}
                   </span>
                   {activePoint.earthCleared && (
                     <span className="text-[10px] bg-cyan-900/60 text-cyan-300 px-1 rounded">
-                      +{earthClearanceAngle}° Cleared
+                      +{earthClearanceAngle}° {language === 'vi' ? 'Đã dự phòng' : 'Cleared'}
                     </span>
                   )}
                 </div>
@@ -616,7 +608,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
               </div>
             </div>
             <div className="text-right font-mono text-[11px]">
-              <span className="text-slate-400 block text-[10px]">Margin</span>
+              <span className="text-slate-400 block text-[10px]">{t.marginLabel}</span>
               <span
                 className={
                   activePoint.earthElevation - activePoint.earthHorizonElevation >= 0
@@ -635,7 +627,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
         </div>
       ) : (
         <div className="p-3 text-center text-xs text-slate-500">
-          No ephemeris data loaded for selected site.
+          {t.noEphemerisLoaded}
         </div>
       )}
     </div>

@@ -86,3 +86,4 @@ describe('Finite Solar Disc Model (Gläser et al. 2014 & Equation 09)', () => {
     expect(mean).toBeCloseTo(0.6875, 4);
   });
 });
+

@@ -14,6 +14,7 @@ import {
   Info,
   AlertTriangle,
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SiteConfigPanelProps {
   sites: SiteConfig[];
@@ -30,6 +31,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
   onUpdateSite,
   onOpenImportModal,
 }) => {
+  const { t } = useLanguage();
   const currentSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
 
   const coordValidation = validateCoordinates(
@@ -53,11 +55,11 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
         <div className="flex items-center space-x-2">
           <MapPin className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-            Candidate Sites (Max 3)
+            {t.candidateSitesTitle}
           </h2>
         </div>
         <span className="text-[11px] text-slate-400 font-mono">
-          {sites.length}/3 Configured
+          {sites.length}/3 {t.sitesConfigured}
         </span>
       </div>
 
@@ -91,7 +93,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
         {/* Site Name */}
         <div>
           <label className="block text-slate-400 text-[11px] font-medium mb-1">
-            Site Label
+            {t.siteName}
           </label>
           <input
             type="text"
@@ -110,7 +112,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-slate-400 text-[11px] font-medium">
-                Latitude (deg)
+                {t.latitudeLabel}
               </label>
               <span className="text-[10px] text-cyan-400 font-mono">
                 {formatLatitude(currentSite.latitude, 2)}
@@ -136,7 +138,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-slate-400 text-[11px] font-medium">
-                East Longitude
+                {t.longitudeLabel}
               </label>
               <span className="text-[10px] text-cyan-400 font-mono">
                 {formatEastLongitude(currentSite.longitude, 2)}
@@ -158,7 +160,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
         </div>
 
         <p className="text-[10px] text-slate-500 leading-tight">
-          Convention: South-negative latitude [-90° to +90°]. East-positive longitude [0° to 360°].
+          {t.coordinatesConvention}
         </p>
 
         {/* Coordinate Validation Messages */}
@@ -185,7 +187,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
         <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
           <div>
             <label className="block text-slate-400 text-[11px] font-medium mb-1">
-              Observer Mast Height (m)
+              {t.observerHeightLabel}
             </label>
             <input
               type="number"
@@ -200,14 +202,11 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
               }
               className="w-full bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
             />
-            <span className="text-[10px] text-slate-500 mt-0.5 block">
-              Above local ground (e.g. 2m mast)
-            </span>
           </div>
 
           <div>
             <label className="block text-slate-400 text-[11px] font-medium mb-1">
-              Terrain Elevation (m)
+              {t.terrainElevationLabel}
             </label>
             <input
               type="number"
@@ -222,7 +221,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
               className="w-full bg-slate-900 border border-slate-700/80 rounded px-2.5 py-1.5 text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
             />
             <span className="text-[10px] text-slate-500 mt-0.5 block">
-              Relative to R=1737.4 km
+              {t.terrainElevationHint}
             </span>
           </div>
         </div>
@@ -238,7 +237,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-slate-300 flex items-center space-x-1">
               <Mountain className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Horizon Profile</span>
+              <span>{t.horizonProfileLabel}</span>
             </span>
             {currentSite.horizonProfile ? (
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30 font-mono">
@@ -269,13 +268,13 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
                   className="text-amber-400 hover:text-amber-300 underline"
                   title="Switch back to idealized 0° geometric horizon"
                 >
-                  Clear Profile
+                  {t.removeProfileBtn}
                 </button>
               </div>
             </div>
           ) : (
             <div className="p-2 rounded bg-slate-900/40 border border-dashed border-slate-700 text-[10px] text-slate-400">
-              No terrain horizon loaded. Using geometric horizon line at 0.0° elevation.
+              {t.noProfileAssigned}
             </div>
           )}
 
@@ -285,14 +284,14 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
             className="w-full py-1.5 px-3 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium flex items-center justify-center space-x-1.5 transition"
           >
             <Upload className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Import / Switch Horizon CSV</span>
+            <span>{t.importCsvBtn}</span>
           </button>
         </div>
 
         {/* External Map permalinks */}
         <div className="pt-2 border-t border-slate-800 space-y-1.5">
           <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider block">
-            Explore Lunar Imagery & DEMs
+            {t.openExternalTools}
           </span>
           <div className="grid grid-cols-2 gap-2">
             <a
@@ -302,7 +301,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
               className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 rounded border border-slate-800 text-[11px] text-cyan-300 hover:text-cyan-200 flex items-center justify-center space-x-1 transition"
               title="Open LROC QuickMap south polar stereographic projection at these coordinates"
             >
-              <span>QuickMap</span>
+              <span>{t.openQuickMap}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
             <a
@@ -312,7 +311,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
               className="py-1.5 px-2 bg-slate-900 hover:bg-slate-800 rounded border border-slate-800 text-[11px] text-cyan-300 hover:text-cyan-200 flex items-center justify-center space-x-1 transition"
               title="Open NASA Moon Trek 3D/2D GIS tool at these coordinates"
             >
-              <span>Moon Trek</span>
+              <span>{t.openMoonTrek}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -320,7 +319,7 @@ export const SiteConfigPanel: React.FC<SiteConfigPanelProps> = ({
 
         {/* Illustrative Disclaimer Note */}
         <div className="p-2 bg-slate-950/80 rounded border border-slate-800/80 text-[10px] text-slate-500 leading-normal">
-          <span className="text-amber-400/80 font-semibold">Note:</span> Illustrative coordinates for Space Apps challenge demonstration. Not approved landing sites.
+          <span className="text-amber-400/80 font-semibold">Note:</span> {t.illustrativeNotice}
         </div>
       </div>
     </div>

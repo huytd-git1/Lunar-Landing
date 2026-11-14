@@ -135,3 +135,4 @@ export function integrateMeanSolarVisibleFraction(
   if (totalDuration <= 0) return 0;
   return Math.max(0, Math.min(1, integral / totalDuration));
 }
+

@@ -94,3 +94,4 @@ describe('Photovoltaic Power Model (Gläser 2014 & Equation 14, 16)', () => {
     expect(energy.cumulativeSeriesWh[2]).toBeCloseTo(1000, 1);
   });
 });
+

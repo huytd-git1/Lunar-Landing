@@ -1,6 +1,7 @@
 import React from 'react';
 import { HeightComparisonResult } from '../services/heightAnalysis';
 import { SiteConfig } from '../types';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HeightComparisonModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
   site,
   results,
 }) => {
+  const { t } = useLanguage();
   if (!isOpen || !site) return null;
 
   return (
@@ -28,11 +30,11 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
                 BARKER ET AL. (2021)
               </span>
               <h2 className="text-xl font-bold text-cyan-300">
-                Observer Mast Height Trade Study (1m, 2m, 5m, 10m)
+                {t.mastStudyModalTitle}
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Topographic horizon lowering & solar energy sensitivity at <span className="text-amber-400 font-semibold">{site.name}</span> ({site.latitude}°, {site.longitude}°E)
+              {t.mastStudyModalSub} <span className="text-amber-400 font-semibold">{site.name}</span> ({site.latitude}°, {site.longitude}°E)
             </p>
           </div>
           <button
@@ -47,8 +49,7 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
         <div className="px-6 py-3 bg-[#081228] border-b border-slate-800 text-xs text-slate-300 flex items-start gap-3">
           <span className="text-lg">🔭</span>
           <p className="leading-relaxed">
-            As demonstrated in <strong className="text-cyan-300">Barker et al. (2021, Fig. 14)</strong> and{' '}
-            <strong className="text-cyan-300">Gläser et al. (2014)</strong>, increasing mast height lowers the local horizon obstacle elevation angle: <span className="font-mono text-cyan-400">ΔH ≈ -arctan(Δh / d_blocker)</span>. This drastically reduces the longest continuous dark period (LCSP / L_dark) and provides more continuous power generation.
+            {t.mastStudyBanner}
           </p>
         </div>
 
@@ -72,30 +73,30 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
                       <span className="text-sm font-bold text-cyan-300">{r.label}</span>
                       {isDefault && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500 text-slate-950 font-semibold">
-                          Current
+                          {t.currentMastBadge}
                         </span>
                       )}
                     </div>
                     <div className="text-2xl font-bold font-mono text-amber-400 mb-1">
                       {r.sunlitPct}%
                     </div>
-                    <div className="text-[11px] text-slate-400 mb-4">Illumination Window</div>
+                    <div className="text-[11px] text-slate-400 mb-4">{t.illuminationWindowLabel}</div>
 
                     <div className="space-y-2 text-xs border-t border-slate-800/80 pt-3">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Mean Disc Fraction:</span>
+                        <span className="text-slate-400">{t.meanDiscLabel}:</span>
                         <span className="font-mono text-slate-200">{r.meanVisibleFractionPct}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Max Dark (LCSP):</span>
+                        <span className="text-slate-400">{t.maxDarkLabel}:</span>
                         <span className="font-mono text-red-400">{r.longestDarkPeriodHours} hrs</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Max Light (LCIP):</span>
+                        <span className="text-slate-400">{t.maxLightLabel}:</span>
                         <span className="font-mono text-emerald-400">{r.longestLightPeriodHours} hrs</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">PV Energy:</span>
+                        <span className="text-slate-400">{t.pvPowerLabel}:</span>
                         <span className="font-mono text-amber-300">{r.totalEnergyKWh} kWh</span>
                       </div>
                     </div>
@@ -108,19 +109,19 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
           {/* Detailed Table */}
           <div className="bg-[#081024] border border-slate-800 rounded-xl overflow-hidden">
             <div className="px-4 py-3 bg-[#070d1e] border-b border-slate-800 font-semibold text-xs text-cyan-300">
-              Comparative Metrics Summary Table
+              {t.mastTableTitle}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-800 text-slate-400 bg-slate-900/40">
-                    <th className="p-3">Observer Height</th>
-                    <th className="p-3">Application Class</th>
-                    <th className="p-3">Illumination (%)</th>
-                    <th className="p-3">Mean Disc Fraction</th>
-                    <th className="p-3">Max Dark Period (LCSP)</th>
-                    <th className="p-3">Max Light Window (LCIP)</th>
-                    <th className="p-3">Energy Generated</th>
+                    <th className="p-3">{t.colObsHeight}</th>
+                    <th className="p-3">{t.colAppClass}</th>
+                    <th className="p-3">{t.colIllumPct}</th>
+                    <th className="p-3">{t.meanDiscLabel}</th>
+                    <th className="p-3">{t.maxDarkLabel}</th>
+                    <th className="p-3">{t.maxLightLabel}</th>
+                    <th className="p-3">{t.colEnergyGen}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800 font-mono">
@@ -129,7 +130,7 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
                       key={r.heightM}
                       className={site.observerHeight === r.heightM ? 'bg-cyan-950/20' : 'hover:bg-slate-900/30'}
                     >
-                      <td className="p-3 font-semibold text-cyan-300">{r.heightM} meters</td>
+                      <td className="p-3 font-semibold text-cyan-300">{r.heightM} m</td>
                       <td className="p-3 text-slate-300 font-sans">{r.label}</td>
                       <td className="p-3 text-amber-400 font-semibold">{r.sunlitPct}%</td>
                       <td className="p-3 text-slate-200">{r.meanVisibleFractionPct}%</td>
@@ -147,16 +148,17 @@ export const HeightComparisonModal: React.FC<HeightComparisonModalProps> = ({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-slate-800 bg-[#070d1e] text-xs text-slate-400">
           <div>
-            Observer height sensitivity analysis referenced from <span className="text-cyan-400">Barker et al. (2021) Section 5</span>.
+            {t.mastStudyFooter}
           </div>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold transition-colors"
           >
-            Close
+            {t.closeBtn}
           </button>
         </div>
       </div>
     </div>
   );
 };
+

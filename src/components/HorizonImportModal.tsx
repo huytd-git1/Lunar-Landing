@@ -14,6 +14,7 @@ import {
   Mountain,
 } from 'lucide-react';
 import { triggerFileDownload } from '../services/exportData';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HorizonImportModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
   site,
   onApplyProfile,
 }) => {
+  const { t } = useLanguage();
   const [csvText, setCsvText] = useState<string>('');
   const [profileName, setProfileName] = useState<string>('Custom User Profile');
   const [demSource, setDemSource] = useState<string>(
@@ -127,10 +129,10 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-white">
-                Terrain Horizon Profile Manager
+                {t.importModalTitle}
               </h2>
               <p className="text-xs text-slate-400">
-                Associating topography profile for {site.name} (Observer: {site.observerHeight}m)
+                {t.importModalSub}: <span className="text-white font-semibold">{site.name}</span> (Obs: {site.observerHeight}m)
               </p>
             </div>
           </div>
@@ -148,7 +150,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
           {/* Quick Sample Profiles */}
           <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 space-y-2">
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Load Pre-Computed Illustrative Topography Profiles (LOLA DEM Derived)
+              {t.sampleProfilesTitle}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
@@ -156,7 +158,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
                 onClick={() => handleLoadSample('shackleton')}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded border border-slate-700 text-left transition"
               >
-                <div className="font-semibold text-white">Shackleton Ridge</div>
+                <div className="font-semibold text-white">{t.sampleShackleton}</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">20m LOLA DEM</div>
               </button>
               <button
@@ -164,7 +166,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
                 onClick={() => handleLoadSample('malapert')}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-purple-300 rounded border border-slate-700 text-left transition"
               >
-                <div className="font-semibold text-white">Malapert Massif</div>
+                <div className="font-semibold text-white">{t.sampleMalapert}</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">30m LOLA DEM</div>
               </button>
               <button
@@ -172,7 +174,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
                 onClick={() => handleLoadSample('degerlache')}
                 className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-300 rounded border border-slate-700 text-left transition"
               >
-                <div className="font-semibold text-white">de Gerlache Rim</div>
+                <div className="font-semibold text-white">{t.sampleDeGerlache}</div>
                 <div className="text-[10px] text-slate-400 mt-0.5">30m LOLA DEM</div>
               </button>
             </div>
@@ -182,7 +184,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-slate-300">
-                Upload CSV File or Paste Content
+                {t.uploadOrPasteTitle}
               </label>
               <button
                 type="button"
@@ -291,7 +293,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
             onClick={handleResetToGeometric}
             className="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition"
           >
-            Use Geometric (0° Line)
+            {t.modeRealGeometric}
           </button>
           <div className="flex items-center space-x-2">
             <button
@@ -299,7 +301,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
               onClick={onClose}
               className="px-3 py-1.5 rounded hover:bg-slate-800 text-slate-400 text-xs transition"
             >
-              Cancel
+              {t.dismissBtn}
             </button>
             <button
               type="button"
@@ -307,7 +309,7 @@ export const HorizonImportModal: React.FC<HorizonImportModalProps> = ({
               disabled={!validationResult || !validationResult.valid}
               className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-bold text-xs transition"
             >
-              Apply to Site
+              {t.applyProfileBtn}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { DataMode } from '../types';
-import { HelpCircle, Download, Radio, Moon, BookOpen } from 'lucide-react';
+import { HelpCircle, Download, Radio, Moon, BookOpen, Languages } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface HeaderProps {
   dataMode: DataMode;
@@ -20,6 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
   isAnalyzing,
 }) => {
   const [currentUtc, setCurrentUtc] = useState<string>('');
+  const { language, toggleLanguage, t } = useLanguage();
 
   useEffect(() => {
     const updateTime = () => {
@@ -37,19 +39,19 @@ export const Header: React.FC<HeaderProps> = ({
     switch (dataMode) {
       case 'real_terrain':
         return {
-          label: 'Real Ephemeris + Terrain Horizon',
+          label: t.modeRealTerrain,
           color: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40',
           dot: 'bg-emerald-400',
         };
       case 'real_geometric':
         return {
-          label: 'Real Ephemeris + Geometric Horizon (0°)',
+          label: t.modeRealGeometric,
           color: 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40',
           dot: 'bg-cyan-400',
         };
       case 'demo':
         return {
-          label: 'Demonstration / Synthetic Mode',
+          label: t.modeDemo,
           color: 'bg-amber-950/80 text-amber-300 border-amber-500/40',
           dot: 'bg-amber-400',
         };
@@ -69,20 +71,33 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-lg md:text-xl font-bold tracking-tight text-white font-sans flex items-center gap-2">
-                Lunar Landing Site Navigator
+                {t.appName}
               </h1>
               <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-900/60 text-cyan-300 border border-cyan-600/40">
-                NASA Space Apps
+                {t.nasaBadge}
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              South-polar candidate landing site comparison via Sun and Earth local horizon ephemerides
+              {t.appSubtitle}
             </p>
           </div>
         </div>
 
-        {/* Right: Data Mode Badge, Live Clock & Actions */}
+        {/* Right: Language Toggle, Data Mode Badge, Live Clock & Actions */}
         <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto justify-between md:justify-end">
+          {/* Language Switcher Button */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-slate-900 border border-cyan-500/40 hover:border-cyan-400 text-xs font-mono text-cyan-300 transition shadow-sm hover:bg-cyan-950/40"
+            title={language === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+          >
+            <Languages className="w-3.5 h-3.5 text-cyan-400" />
+            <span className={language === 'vi' ? 'font-bold text-amber-400' : 'text-slate-400'}>VI</span>
+            <span className="text-slate-600">|</span>
+            <span className={language === 'en' ? 'font-bold text-amber-400' : 'text-slate-400'}>EN</span>
+          </button>
+
           {/* Data Mode Switcher */}
           <div className="relative group">
             <div
@@ -95,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Quick dropdown for mode selection */}
             <div className="hidden group-hover:block absolute right-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl p-1 z-50 text-xs">
               <div className="px-2 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Select Active Calculation Mode
+                {t.selectMode}
               </div>
               <button
                 type="button"
@@ -104,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
                   dataMode === 'real_terrain' ? 'bg-cyan-950 text-cyan-200' : 'text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                <span>Real Ephemeris + Terrain</span>
+                <span>{t.modeRealTerrain}</span>
                 {dataMode === 'real_terrain' && <span className="text-cyan-400">✓</span>}
               </button>
               <button
@@ -114,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
                   dataMode === 'real_geometric' ? 'bg-cyan-950 text-cyan-200' : 'text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                <span>Real Ephemeris + Geometric (0°)</span>
+                <span>{t.modeRealGeometric}</span>
                 {dataMode === 'real_geometric' && <span className="text-cyan-400">✓</span>}
               </button>
               <button
@@ -124,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
                   dataMode === 'demo' ? 'bg-cyan-950 text-cyan-200' : 'text-slate-300 hover:bg-slate-800'
                 }`}
               >
-                <span>Demonstration Mode</span>
+                <span>{t.modeDemo}</span>
                 {dataMode === 'demo' && <span className="text-cyan-400">✓</span>}
               </button>
             </div>
@@ -133,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Current UTC Clock */}
           <div className="bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded text-xs font-mono text-cyan-300 flex items-center space-x-1.5">
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{currentUtc || 'SYNCING...'}</span>
+            <span>{currentUtc || t.syncing}</span>
           </div>
 
           {/* Scientific Literature Foundations Modal button */}
@@ -144,7 +159,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="View 8 Research Literature Papers & 10 Methodological Figures (Barker, Gläser, Bryant, etc.)"
           >
             <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Research Foundations</span>
+            <span className="hidden sm:inline">{t.researchButton}</span>
           </button>
 
           {/* Educational "How it works" button */}
@@ -155,7 +170,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Learn how azimuth, elevation, and lunar polar horizon geometry work"
           >
             <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">How It Works</span>
+            <span className="hidden sm:inline">{t.howItWorksButton}</span>
           </button>
 
           {/* Export JSON Button */}
@@ -167,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
             title="Export full multi-site analysis with metadata and provenance"
           >
             <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export JSON</span>
+            <span className="hidden sm:inline">{t.exportJsonButton}</span>
           </button>
         </div>
       </div>

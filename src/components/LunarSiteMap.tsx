@@ -15,6 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import { formatEastLongitude, formatLatitude } from '../services/coordinates';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface LunarSiteMapProps {
   sites: SiteConfig[];
@@ -246,6 +247,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
   const quickmapUrl = `https://quickmap.lroc.asu.edu/?extent=${selectedSite.latitude - 0.5},${selectedSite.longitude - 2},${selectedSite.latitude + 0.5},${selectedSite.longitude + 2}&proj=17`;
   const moonTrekUrl = `https://trek.nasa.gov/moon/#v=0.1&x=${selectedSite.longitude}&y=${selectedSite.latitude}&z=10`;
 
+  const { t } = useLanguage();
   // Sun dynamic azimuth angle for terrain hillshading
   const sunAzimuth = activePoint ? activePoint.sunAzimuth : 315;
   const sunLightX = cx + Math.sin((sunAzimuth * Math.PI) / 180) * 80;
@@ -262,7 +264,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
         <div className="flex items-center space-x-2">
           <Compass className="w-4 h-4 text-cyan-400" />
           <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-            <span>Lunar South Pole Interactive Map</span>
+            <span>{t.polarMapTitle}</span>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40">
               LOLA & WAC
             </span>
@@ -279,7 +281,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             className="text-xs text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center space-x-1"
             title="Open in LROC QuickMap South Pole view"
           >
-            <span>QuickMap</span>
+            <span>{t.openQuickMap}</span>
             <ExternalLink className="w-3 h-3" />
           </a>
           <a
@@ -289,7 +291,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             className="text-xs text-cyan-400 hover:text-cyan-300 px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center space-x-1"
             title="Open in NASA Moon Trek South Pole GIS"
           >
-            <span>Moon Trek</span>
+            <span>{t.openMoonTrek}</span>
             <ExternalLink className="w-3 h-3" />
           </a>
 
@@ -319,7 +321,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             }`}
             title="LOLA Topography Shaded Relief with dynamic solar shadow casting"
           >
-            Shaded Relief
+            {t.layerRelief}
           </button>
           <button
             type="button"
@@ -331,7 +333,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             }`}
             title="Hypsometric color-coded elevation map (-4 km to +5 km)"
           >
-            Elevation Tint
+            {t.layerElevation}
           </button>
           <button
             type="button"
@@ -343,7 +345,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             }`}
             title="LROC WAC annual solar illumination percentage and PSR cold traps"
           >
-            Solar Illum %
+            {t.layerWac}
           </button>
           <button
             type="button"
@@ -355,7 +357,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             }`}
             title="Direct-to-Earth radio line-of-sight coverage mask"
           >
-            Earth LOS Mask
+            {t.layerEarthLos}
           </button>
         </div>
 
@@ -372,7 +374,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             title="Select & Pan Tool: Click site markers or drag map"
           >
             <Crosshair className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Select/Pan</span>
+            <span className="hidden sm:inline">Pan</span>
           </button>
 
           {onUpdateSite && (
@@ -387,7 +389,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               title="Click on the lunar surface to relocate the active candidate site"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Relocate Site</span>
+              <span className="hidden sm:inline">{t.toolRelocate}</span>
             </button>
           )}
 
@@ -406,7 +408,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
             title="Measure distance between any two lunar surface points"
           >
             <Ruler className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Ruler (km)</span>
+            <span className="hidden sm:inline">{t.rulerTool}</span>
           </button>
         </div>
       </div>
@@ -432,15 +434,15 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
       {activeTool === 'reposition' && (
         <div className="mb-2 p-1.5 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300 text-[11px] flex items-center space-x-1.5">
           <Info className="w-3.5 h-3.5 shrink-0" />
-          <span>Click anywhere on the Moon to place <strong>{selectedSite.name}</strong>.</span>
+          <span>{t.relocateHint}: <strong>{selectedSite.name}</strong>.</span>
         </div>
       )}
       {activeTool === 'measure' && (
         <div className="mb-2 p-1.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-[11px] flex items-center justify-between">
-          <span>Click 2 points on the map to measure surface distance.</span>
+          <span>{t.measureHint}</span>
           {measuredDistanceKm !== null && (
             <span className="font-mono font-bold bg-emerald-900/80 px-2 py-0.5 rounded text-white">
-              Distance: {measuredDistanceKm} km
+              {t.distanceLabel}: {measuredDistanceKm} km
             </span>
           )}
         </div>
@@ -1025,7 +1027,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               onChange={(e) => setShowCraters(e.target.checked)}
               className="rounded accent-cyan-400 cursor-pointer"
             />
-            <span className="text-slate-300">Craters</span>
+            <span className="text-slate-300">{t.layerCraters}</span>
           </label>
           <label className="flex items-center space-x-1 cursor-pointer">
             <input
@@ -1034,7 +1036,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               onChange={(e) => setShowGrid(e.target.checked)}
               className="rounded accent-cyan-400 cursor-pointer"
             />
-            <span className="text-slate-300">Polar Grid</span>
+            <span className="text-slate-300">{t.layerPolarGrid}</span>
           </label>
           <label className="flex items-center space-x-1 cursor-pointer">
             <input
@@ -1043,7 +1045,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               onChange={(e) => setShowSunBeam(e.target.checked)}
               className="rounded accent-amber-400 cursor-pointer"
             />
-            <span className="text-amber-300">Sun Vector</span>
+            <span className="text-amber-300">{t.layerSunVector}</span>
           </label>
           <label className="flex items-center space-x-1 cursor-pointer">
             <input
@@ -1052,7 +1054,7 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               onChange={(e) => setShowEarthBeam(e.target.checked)}
               className="rounded accent-blue-400 cursor-pointer"
             />
-            <span className="text-blue-300">Earth Vector</span>
+            <span className="text-blue-300">{t.layerEarthVector}</span>
           </label>
           <label className="flex items-center space-x-1 cursor-pointer">
             <input
@@ -1061,13 +1063,13 @@ export const LunarSiteMap: React.FC<LunarSiteMapProps> = ({
               onChange={(e) => setShowPSRs(e.target.checked)}
               className="rounded accent-indigo-400 cursor-pointer"
             />
-            <span className="text-indigo-300">PSR Ice Traps</span>
+            <span className="text-indigo-300">{t.layerPsr}</span>
           </label>
         </div>
 
         {/* Live Cursor Coordinate Readout */}
         <div className="font-mono text-xs flex items-center space-x-2 bg-slate-900 px-2.5 py-1 rounded border border-slate-800">
-          <span className="text-slate-500">Cursor:</span>
+          <span className="text-slate-500">{t.cursorLabel}:</span>
           <span className="text-cyan-300 font-semibold">
             {hoverCoords
               ? `${formatLatitude(hoverCoords.lat, 2)}, ${formatEastLongitude(hoverCoords.lon, 1)}`
