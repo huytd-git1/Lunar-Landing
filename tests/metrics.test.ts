@@ -2,55 +2,61 @@ import { describe, expect, it } from 'vitest';
 import { calculateSiteMetrics } from '../src/services/metrics';
 import { CalculatedPoint } from '../src/types';
 
+function createMockPoint(partial: Partial<CalculatedPoint>): CalculatedPoint {
+  const sunEl = partial.sunElevation ?? 2.0;
+  const sunHor = partial.sunHorizonElevation ?? 0.0;
+  const earthEl = partial.earthElevation ?? 5.0;
+  const earthHor = partial.earthHorizonElevation ?? 0.0;
+  const sunVis = partial.sunVisible ?? (sunEl > sunHor ? 'visible' : 'obstructed');
+  const earthVis = partial.earthVisible ?? (earthEl > earthHor ? 'visible' : 'obstructed');
+
+  return {
+    timestamp: '2026-11-15T00:00:00.000Z',
+    rawTime: '2026-Nov-15 00:00',
+    stepMinutes: 60,
+    sunAzimuth: 100,
+    sunElevation: sunEl,
+    sunHorizonElevation: sunHor,
+    sunClearance: sunEl - sunHor,
+    sunVisible: sunVis,
+    solarVisibleFraction: sunVis === 'visible' ? 1.0 : 0.0,
+    sunlitState: sunVis,
+    earthAzimuth: 200,
+    earthElevation: earthEl,
+    earthHorizonElevation: earthHor,
+    earthClearance: earthEl - earthHor,
+    earthVisible: earthVis,
+    earthCleared: true,
+    bothVisible: sunVis === 'visible' && earthVis === 'visible',
+    pvPowerWatts: sunVis === 'visible' ? 500 : 0,
+    cumulativeEnergyWh: 0,
+    solarVectorENU: [0, 1, 0],
+    ...partial,
+  };
+}
+
 describe('Duration Metrics Calculation', () => {
   it('integrates over actual time intervals and handles all-visible and all-obstructed cases', () => {
     // 3 samples spaced by 1 hour (2 intervals of 1 hr = 2 hrs total)
     const allVisiblePoints: CalculatedPoint[] = [
-      {
+      createMockPoint({
         timestamp: '2026-11-15T00:00:00.000Z',
         rawTime: '2026-Nov-15 00:00',
-        stepMinutes: 60,
-        sunAzimuth: 100,
         sunElevation: 2.0,
-        sunHorizonElevation: 0.0,
-        sunVisible: 'visible',
-        earthAzimuth: 200,
         earthElevation: 5.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
-      {
+      }),
+      createMockPoint({
         timestamp: '2026-11-15T01:00:00.000Z',
         rawTime: '2026-Nov-15 01:00',
-        stepMinutes: 60,
-        sunAzimuth: 101,
         sunElevation: 2.1,
-        sunHorizonElevation: 0.0,
-        sunVisible: 'visible',
-        earthAzimuth: 200,
         earthElevation: 5.1,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
-      {
+      }),
+      createMockPoint({
         timestamp: '2026-11-15T02:00:00.000Z',
         rawTime: '2026-Nov-15 02:00',
-        stepMinutes: 60,
-        sunAzimuth: 102,
         sunElevation: 2.2,
-        sunHorizonElevation: 0.0,
-        sunVisible: 'visible',
-        earthAzimuth: 200,
         earthElevation: 5.2,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
+      }),
     ];
 
     const metrics = calculateSiteMetrics('test-site', 'Test Site', 'real_geometric', allVisiblePoints);
@@ -70,36 +76,22 @@ describe('Duration Metrics Calculation', () => {
     // At t=2: Sun elevation = -1.0° (margin = -1.0°)
     // Symmetrical crossing: should be visible for 1.0 hr, obstructed for 1.0 hr
     const transitionPoints: CalculatedPoint[] = [
-      {
+      createMockPoint({
         timestamp: '2026-11-15T00:00:00.000Z',
         rawTime: '2026-Nov-15 00:00',
         stepMinutes: 120,
-        sunAzimuth: 50,
         sunElevation: 1.0,
-        sunHorizonElevation: 0.0,
         sunVisible: 'visible',
-        earthAzimuth: 180,
-        earthElevation: 3.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
-      {
+        sunlitState: 'visible',
+      }),
+      createMockPoint({
         timestamp: '2026-11-15T02:00:00.000Z',
         rawTime: '2026-Nov-15 02:00',
         stepMinutes: 120,
-        sunAzimuth: 52,
         sunElevation: -1.0,
-        sunHorizonElevation: 0.0,
         sunVisible: 'obstructed',
-        earthAzimuth: 180,
-        earthElevation: 3.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: false,
-      },
+        sunlitState: 'obstructed',
+      }),
     ];
 
     const metrics = calculateSiteMetrics('site-trans', 'Transition Site', 'real_geometric', transitionPoints);
@@ -112,60 +104,33 @@ describe('Duration Metrics Calculation', () => {
   it('handles missing/unknown data without classifying it as obstructed', () => {
     // Point with unknown visibility
     const pointsWithMissing: CalculatedPoint[] = [
-      {
+      createMockPoint({
         timestamp: '2026-11-15T00:00:00.000Z',
         rawTime: '2026-Nov-15 00:00',
-        stepMinutes: 60,
-        sunAzimuth: 10,
         sunElevation: 2.0,
-        sunHorizonElevation: 0.0,
         sunVisible: 'visible',
-        earthAzimuth: 180,
-        earthElevation: 2.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
-      {
+      }),
+      createMockPoint({
         timestamp: '2026-11-15T01:00:00.000Z',
         rawTime: '2026-Nov-15 01:00',
-        stepMinutes: 60,
-        sunAzimuth: 12,
         sunElevation: NaN,
-        sunHorizonElevation: 0.0,
         sunVisible: 'unknown',
-        earthAzimuth: 180,
-        earthElevation: 2.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: false,
-      },
-      {
+        sunlitState: 'unknown',
+      }),
+      createMockPoint({
         timestamp: '2026-11-15T02:00:00.000Z',
         rawTime: '2026-Nov-15 02:00',
-        stepMinutes: 60,
-        sunAzimuth: 14,
         sunElevation: 2.0,
-        sunHorizonElevation: 0.0,
         sunVisible: 'visible',
-        earthAzimuth: 180,
-        earthElevation: 2.0,
-        earthHorizonElevation: 0.0,
-        earthVisible: 'visible',
-        earthCleared: true,
-        bothVisible: true,
-      },
+      }),
     ];
 
-    const metrics = calculateSiteMetrics('site-missing', 'Missing Site', 'real_geometric', pointsWithMissing);
+    const metrics = calculateSiteMetrics('site-gap', 'Gap Site', 'real_geometric', pointsWithMissing);
+    // Interval 0->1 is invalid, interval 1->2 is invalid (contains unknown).
     expect(metrics.totalMissionHours).toBeCloseTo(2.0, 2);
-    // Interval 0->1 involves unknown, interval 1->2 involves unknown: total valid is 0
-    expect(metrics.totalValidHours).toBe(0);
-    expect(metrics.dataCoveragePct).toBe(0);
-    // Crucially: longest obstruction must be 0, NOT 2 hours
+    expect(metrics.dataCoveragePct).toBe(0); // 0 valid hours out of 2
+    expect(metrics.sunVisibleHours).toBe(0);
+    // Unknown data MUST NOT become 'obstructed'
     expect(metrics.longestSunObstructedHours).toBe(0);
   });
 });
-

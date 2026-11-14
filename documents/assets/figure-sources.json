@@ -1,0 +1,162 @@
+[
+  {
+    "file": "01-horizon-database.png",
+    "source_file": "03-1-s2.0-S0019103510004203-main.pdf",
+    "author": "Mazarico et al. (2011)",
+    "figure": "Figure 2",
+    "pdf_page": 4,
+    "title_vi": "Tính và lưu đường chân trời theo các hướng",
+    "doi_or_report": "10.1016/j.icarus.2010.10.030",
+    "crop_pdf_points": [
+      28,
+      59,
+      568,
+      349
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "02-lunar-curvature.png",
+    "source_file": "02-1-s2.0-S0019103514004278-main.pdf",
+    "author": "Gläser et al. (2014)",
+    "figure": "Figure 7",
+    "pdf_page": 5,
+    "title_vi": "Hình học địa hình, mặt phẳng tiếp tuyến và độ cong Mặt Trăng",
+    "doi_or_report": "10.1016/j.icarus.2014.08.013",
+    "crop_pdf_points": [
+      27,
+      539,
+      282,
+      734
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "03-visible-solar-disc.png",
+    "source_file": "02-1-s2.0-S0019103514004278-main.pdf",
+    "author": "Gläser et al. (2014)",
+    "figure": "Figure 8",
+    "pdf_page": 5,
+    "title_vi": "Tỷ lệ đĩa Mặt Trời không bị địa hình che khuất",
+    "doi_or_report": "10.1016/j.icarus.2014.08.013",
+    "crop_pdf_points": [
+      300,
+      59,
+      569,
+      256
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "04-sun-earth-horizon.png",
+    "source_file": "05-176C.pdf",
+    "author": "Bryant (2009)",
+    "figure": "Figure 5",
+    "pdf_page": 10,
+    "title_vi": "Đường chân trời và miền chuyển động Mặt Trời/Trái Đất",
+    "doi_or_report": "JPL IPN Progress Report 42-176, 176C",
+    "crop_pdf_points": [
+      141,
+      59,
+      506,
+      354
+    ],
+    "source_page_excerpt": "Figure 5. Site B1 terrain horizon mask with 1-deg azimuth spacing.\n\n\n                                                                      Equatorial Horizon Mask for 2-m Tower\n                                                 South Pole Location –12.4000 X, –13.6800 Y km, 1260.935 Z m\n                                10\n\n\n                                 8\n\n\n                                 6\n\n\n                                 4\n\n                                        deg   2\n\n\n                                 0                                                                                                                         Latitude,\n\n                                  –2                                                                   South\n\n                                  –4\n\n\n                                  –6\n\n\n                                  –8\n\n\n                                –10\n                                 –180  –150  –120   –90    –60    –30     0     30    60    90    120    150   180\n                                                                              Longitude, deg\n\n                                                 Figure 6. Site B1 terrain horizon mask with 1-deg azimuth spacing, in\n                                                                   selenographic coordinates.\n\n\n10"
+  },
+  {
+    "file": "05-illumination-time-series.png",
+    "source_file": "02-1-s2.0-S0019103514004278-main.pdf",
+    "author": "Gläser et al. (2014)",
+    "figure": "Figure 18",
+    "pdf_page": 9,
+    "title_vi": "Chuỗi tỷ lệ đĩa Mặt Trời nhìn thấy theo thời gian",
+    "doi_or_report": "10.1016/j.icarus.2014.08.013",
+    "crop_pdf_points": [
+      28,
+      556,
+      568,
+      734
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "06-height-comparison.png",
+    "source_file": "01-1-s2.0-S0032063320303329-main.pdf",
+    "author": "Barker et al. (2021)",
+    "figure": "Figure 14",
+    "pdf_page": 9,
+    "title_vi": "So sánh chiếu sáng, LCIP và LCSP ở độ cao 1 m và 5 m",
+    "doi_or_report": "10.1016/j.pss.2020.105119",
+    "crop_pdf_points": [
+      69,
+      49,
+      519,
+      615
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "07-shadow-validation.png",
+    "source_file": "04-remotesensing-15-05691-v2.pdf",
+    "author": "Zhang et al. (2023)",
+    "figure": "Figure 7",
+    "pdf_page": 10,
+    "title_vi": "Ảnh nhị phân và bản đồ sai khác vùng sáng/tối",
+    "doi_or_report": "10.3390/rs15245691",
+    "crop_pdf_points": [
+      163,
+      478,
+      552,
+      589
+    ],
+    "source_page_excerpt": "Figure 7. (a) The binarization map of the DEM-simulated illumination image. (b) The binarization\n                       map of NAC image. (c) Shadow-mismatch map using DEM-simulated illumination image as reference\n                              (cyan is the consistent area, yellow is the mismatched pixels in the light area, and blue is the\n                          mismatched pixels in the dark area. With the TMR is 7.64%, the LZMR is 5.11% and the DZMR\n                                         is 9.97%).\n\n                            The distribution of shadow variations is presented using a binary map. By comparing\n                            the differences between images within the same azimuth range but different elevation\n                              angles, as well as images within the same elevation angle range but different azimuth angles,\n                    we can select the image with the lowest mismatch rate as the basis of the illumination\n                            conditions for a speciﬁc moment.\n\n                                   4.2.2. Adaptive Illumination Condition Analysis by Combining Images and DEM\n\n                                 In most cases, images that closely match the required illumination conditions can\n                               directly support engineering applications. However, some retrieved nearest sun posi-"
+  },
+  {
+    "file": "08-horizon-solar-path.png",
+    "source_file": "02-1-s2.0-S0019103514004278-main.pdf",
+    "author": "Gläser et al. (2014)",
+    "figure": "Figure 19",
+    "pdf_page": 9,
+    "title_vi": "Đường chân trời và quỹ đạo tâm Mặt Trời",
+    "doi_or_report": "10.1016/j.icarus.2014.08.013",
+    "crop_pdf_points": [
+      301,
+      53,
+      569,
+      207
+    ],
+    "source_page_excerpt": ""
+  },
+  {
+    "file": "09-disc-interpolation.png",
+    "source_file": "06-1208.5587v1.pdf",
+    "author": "De Rosa et al. (2012)",
+    "figure": "Figure 6",
+    "pdf_page": 28,
+    "title_vi": "Nội suy đường chân trời và xấp xỉ phần đĩa Mặt Trời nhìn thấy",
+    "doi_or_report": "10.1016/j.pss.2012.08.002",
+    "crop_pdf_points": [
+      62,
+      206,
+      559,
+      411
+    ],
+    "source_page_excerpt": "Figure 6. Computation in the Illumination and Communication Analysis Tool (Astrium) of the\nhorizon elevation for an arbitrary azimuth. The horizon elevation at the Sun azimuth,\ncorresponding to the current simulation time, is computed by linear interpolation of the elevation\nvalues at the surrounding points of the horizon. The figure also shows the visible Sun fraction\ncomputation by evaluation of the vertical fraction above the computed horizon elevation (area\ndashed with red lines, from top-right to bottom-left). The difference with the true visible fraction\n(area dashed with blue lines, from top-left to bottom-right) has been found to be negligible (0.4%\nof the visible fraction for a 1-year simulation, with very few cases above 1% difference), in view of\na significant computational gain."
+  },
+  {
+    "file": "10-multicriteria-extension.png",
+    "source_file": "07-remotesensing-17-01579.pdf",
+    "author": "Liu et al. (2025)",
+    "figure": "Figure 2",
+    "pdf_page": 5,
+    "title_vi": "Quy trình mở rộng đánh giá đa tiêu chí bằng SOM",
+    "doi_or_report": "10.3390/rs17091579",
+    "crop_pdf_points": [
+      42,
+      204,
+      552,
+      443
+    ],
+    "source_page_excerpt": "Figure 2. Schematic of SOM-based South Polar landing zone selection.\n\n                             To address hyperparameter optimization in the SOM model, a Bayesian optimization\n                           technique automatically identifies the best network topology and training epoch and\n                           predicted improvement acquisition functions for efficient parameter space exploration.\n                       The input layer’s neuron count is directly proportional to the data source dimensions\n                             (10 neurons for 10 data sources in the full model, or 5 neurons for 5 data sources in the\n                            engineering model), and all preprocessed feature data are supplied into the network at the\n                       same time.\n                           The SOM automatically discovers nonlinear correlations between features using its\n                            competitive learning mechanism, resulting in synergistic grouping of multi-source data. To\n                         improve interpretability, post-training random forest analysis computes significance scores,\n                        which quantify each feature’s contribution to clustering outcomes.\n                            The final output neuron weight vectors indicate the best feature combination patterns,\n                           allowing for unsupervised clustering-based landing site selection. This strategy takes full\n                          advantage of SOM’s topology-preserving properties to successfully retain high-dimensional\n                           "
+  }
+]

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CalculatedPoint, HorizonProfile, SiteConfig } from '../types';
 import { interpolateHorizonElevation } from '../services/horizonProfile';
-import { ZoomIn, ZoomOut, Sun, Globe, Layers } from 'lucide-react';
+import { ZoomIn, ZoomOut, Sun, Globe, Layers, Zap } from 'lucide-react';
 
 interface LocalHorizonChartProps {
   site: SiteConfig;
@@ -131,7 +131,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Observer local horizon coordinate system: Azimuth [0° to 360°], Elevation [deg]
+            Local topocentric coordinate system: Azimuth [0° to 360°], Elevation [deg]. Finite solar disc model α = 0.266°.
           </p>
         </div>
 
@@ -178,7 +178,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
             {/* Sun Glow */}
             <radialGradient id="sunMarkerGlow" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stopColor="#F59E0B" stopOpacity="1" />
-              <stop offset="50%" stopColor="#FBBF24" stopOpacity="0.6" />
+              <stop offset="60%" stopColor="#FBBF24" stopOpacity="0.5" />
               <stop offset="100%" stopColor="#F59E0B" stopOpacity="0" />
             </radialGradient>
 
@@ -302,12 +302,16 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
           {/* Active Sun and Earth Markers */}
           {activePoint && (
             <g>
-              {/* 1. Sun Marker */}
+              {/* 1. Sun Marker with Finite Disc Rendering */}
               {(() => {
                 const sunX = azToX(activePoint.sunAzimuth);
                 const sunY = elevToY(activePoint.sunElevation);
                 const sunHorY = elevToY(activePoint.sunHorizonElevation);
-                const isVisible = activePoint.sunVisible === 'visible';
+                const isVisible = activePoint.sunlitState === 'visible' || activePoint.sunVisible === 'visible';
+                const discFrac = activePoint.solarVisibleFraction ?? (activePoint.sunVisible === 'visible' ? 1.0 : 0.0);
+
+                // Pixel scale of solar angular diameter (~0.53° diameter, visual scale 8px radius)
+                const sunR = 8.0;
 
                 return (
                   <g>
@@ -324,50 +328,66 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                     />
 
                     {/* Sun disc and glow */}
-                    <circle cx={sunX} cy={sunY} r="14" fill="url(#sunMarkerGlow)" />
+                    <circle cx={sunX} cy={sunY} r="16" fill="url(#sunMarkerGlow)" opacity={discFrac > 0 ? 0.9 : 0.3} />
+                    
+                    {/* Solar Disc Base */}
                     <circle
                       cx={sunX}
                       cy={sunY}
-                      r="6.5"
-                      fill="#F59E0B"
+                      r={sunR}
+                      fill={discFrac > 0 ? '#F59E0B' : '#451A03'}
                       stroke="#FEF08A"
                       strokeWidth="1.5"
                     />
 
-                    {/* Sun rays icon spikes */}
-                    {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
-                      const rad = (deg * Math.PI) / 180;
-                      const r1 = 8.5;
-                      const r2 = 11.5;
-                      return (
-                        <line
-                          key={deg}
-                          x1={sunX + r1 * Math.cos(rad)}
-                          y1={sunY + r1 * Math.sin(rad)}
-                          x2={sunX + r2 * Math.cos(rad)}
-                          y2={sunY + r2 * Math.sin(rad)}
-                          stroke="#FBBF24"
-                          strokeWidth="1.2"
+                    {/* Partial Clipping Shading when intersecting horizon */}
+                    {discFrac > 0 && discFrac < 1.0 && (
+                      <clipPath id="sunDiscPartialClip">
+                        <rect
+                          x={sunX - sunR - 2}
+                          y={sunY - sunR - 2}
+                          width={2 * sunR + 4}
+                          height={(2 * sunR + 4) * (1 - discFrac)}
                         />
-                      );
-                    })}
+                      </clipPath>
+                    )}
+
+                    {/* Sun rays spikes when lit */}
+                    {discFrac > 0.1 &&
+                      [0, 45, 90, 135, 180, 225, 270, 315].map((deg) => {
+                        const rad = (deg * Math.PI) / 180;
+                        const r1 = 10.5;
+                        const r2 = 13.5;
+                        return (
+                          <line
+                            key={deg}
+                            x1={sunX + r1 * Math.cos(rad)}
+                            y1={sunY + r1 * Math.sin(rad)}
+                            x2={sunX + r2 * Math.cos(rad)}
+                            y2={sunY + r2 * Math.sin(rad)}
+                            stroke="#FBBF24"
+                            strokeWidth="1.2"
+                            opacity={discFrac}
+                          />
+                        );
+                      })}
 
                     {/* Text Label above or below disc */}
                     <g
                       transform={`translate(${sunX}, ${
-                        sunY > margin.top + 30 ? sunY - 18 : sunY + 22
+                        sunY > margin.top + 30 ? sunY - 20 : sunY + 24
                       })`}
                     >
                       <rect
-                        x="-48"
+                        x="-52"
                         y="-10"
-                        width="96"
+                        width="104"
                         height="18"
                         rx="4"
                         fill="#0B1120"
                         stroke={isVisible ? '#F59E0B' : '#EF4444'}
                         strokeWidth="1"
-                        opacity="0.9"
+                        opacity="0.95"
                       />
                       <text
                         x="0"
@@ -379,7 +399,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                         fontFamily="monospace"
                       >
                         ☀️ Sun {activePoint.sunElevation >= 0 ? '+' : ''}
-                        {activePoint.sunElevation.toFixed(2)}°
+                        {activePoint.sunElevation.toFixed(2)}° ({(discFrac * 100).toFixed(0)}%)
                       </text>
                     </g>
                   </g>
@@ -409,11 +429,11 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                       />
 
                       {/* Earth disc and glow */}
-                      <circle cx={earthX} cy={earthY} r="13" fill="url(#earthMarkerGlow)" />
+                      <circle cx={earthX} cy={earthY} r="14" fill="url(#earthMarkerGlow)" />
                       <circle
                         cx={earthX}
                         cy={earthY}
-                        r="6"
+                        r="6.5"
                         fill="#3B82F6"
                         stroke="#93C5FD"
                         strokeWidth="1.5"
@@ -429,7 +449,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                       {/* Text Label */}
                       <g
                         transform={`translate(${earthX}, ${
-                          earthY > margin.top + 30 ? earthY - 18 : earthY + 22
+                          earthY > margin.top + 30 ? earthY - 20 : earthY + 24
                         })`}
                       >
                         <rect
@@ -441,7 +461,7 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                           fill="#0B1120"
                           stroke={isVisible ? '#3B82F6' : '#EF4444'}
                           strokeWidth="1"
-                          opacity="0.9"
+                          opacity="0.95"
                         />
                         <text
                           x="0"
@@ -516,13 +536,13 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
         </svg>
       </div>
 
-      {/* Instantaneous Object Status Readout Cards */}
+      {/* Instantaneous Object Status & Photovoltaic Power Readout Cards */}
       {activePoint ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
-          {/* Sun Status Card */}
+          {/* Sun & Photovoltaic Power Status Card */}
           <div
             className={`p-2.5 rounded-lg border flex items-center justify-between text-xs ${
-              activePoint.sunVisible === 'visible'
+              activePoint.sunlitState === 'visible' || activePoint.sunVisible === 'visible'
                 ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
                 : 'bg-red-950/20 border-red-500/30 text-red-300'
             }`}
@@ -534,12 +554,15 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
                   <span>Sun:</span>
                   <span
                     className={`text-[11px] font-mono uppercase px-1.5 py-0.2 rounded ${
-                      activePoint.sunVisible === 'visible'
+                      activePoint.sunlitState === 'visible' || activePoint.sunVisible === 'visible'
                         ? 'bg-amber-500/20 text-amber-300'
                         : 'bg-red-500/20 text-red-300'
                     }`}
                   >
-                    {activePoint.sunVisible}
+                    {activePoint.sunlitState || activePoint.sunVisible}
+                  </span>
+                  <span className="text-[10px] text-amber-400 font-mono bg-amber-950/60 px-1 py-0.5 rounded">
+                    f_sun: {((activePoint.solarVisibleFraction ?? (activePoint.sunVisible === 'visible' ? 1 : 0)) * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono">
@@ -548,16 +571,12 @@ export const LocalHorizonChart: React.FC<LocalHorizonChartProps> = ({
               </div>
             </div>
             <div className="text-right font-mono text-[11px]">
-              <span className="text-slate-400 block text-[10px]">Margin</span>
-              <span
-                className={
-                  activePoint.sunElevation - activePoint.sunHorizonElevation >= 0
-                    ? 'text-emerald-400 font-semibold'
-                    : 'text-red-400 font-semibold'
-                }
-              >
-                {(activePoint.sunElevation - activePoint.sunHorizonElevation >= 0 ? '+' : '')}
-                {(activePoint.sunElevation - activePoint.sunHorizonElevation).toFixed(2)}°
+              <div className="flex items-center gap-1 text-amber-300 font-semibold justify-end">
+                <Zap className="w-3 h-3 text-amber-400" />
+                <span>{activePoint.pvPowerWatts} W</span>
+              </div>
+              <span className="text-slate-400 block text-[10px]">
+                Σ {activePoint.cumulativeEnergyWh} Wh
               </span>
             </div>
           </div>

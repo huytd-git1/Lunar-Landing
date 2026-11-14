@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { DataMode } from '../types';
-import { HelpCircle, Download, Radio, Moon } from 'lucide-react';
+import { HelpCircle, Download, Radio, Moon, BookOpen } from 'lucide-react';
 
 interface HeaderProps {
   dataMode: DataMode;
   onDataModeChange: (mode: DataMode) => void;
   onOpenHowItWorks: () => void;
+  onOpenResearch: () => void;
   onExportJson: () => void;
   isAnalyzing: boolean;
 }
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   dataMode,
   onDataModeChange,
   onOpenHowItWorks,
+  onOpenResearch,
   onExportJson,
   isAnalyzing,
 }) => {
@@ -133,6 +135,17 @@ export const Header: React.FC<HeaderProps> = ({
             <Radio className="w-3.5 h-3.5 text-cyan-400" />
             <span>{currentUtc || 'SYNCING...'}</span>
           </div>
+
+          {/* Scientific Literature Foundations Modal button */}
+          <button
+            type="button"
+            onClick={onOpenResearch}
+            className="flex items-center space-x-1.5 px-3 py-1 rounded bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-300 border border-cyan-600/50 text-xs font-medium transition"
+            title="View 8 Research Literature Papers & 10 Methodological Figures (Barker, Gläser, Bryant, etc.)"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden sm:inline">Research Foundations</span>
+          </button>
 
           {/* Educational "How it works" button */}
           <button

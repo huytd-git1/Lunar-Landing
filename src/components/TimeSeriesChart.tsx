@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CalculatedPoint } from '../types';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Sun, Zap } from 'lucide-react';
 
 interface TimeSeriesChartProps {
   points: CalculatedPoint[];
@@ -8,12 +8,15 @@ interface TimeSeriesChartProps {
   onSelectIndex: (index: number) => void;
 }
 
+export type ChartViewMode = 'elevation' | 'disc_fraction' | 'power';
+
 export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
   points,
   activeIndex,
   onSelectIndex,
 }) => {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<ChartViewMode>('elevation');
 
   if (!points || points.length === 0) {
     return (
@@ -25,12 +28,25 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
 
   // Chart dimensions
   const width = 1000;
-  const height = 220;
-  const margin = { top: 25, right: 30, bottom: 35, left: 55 };
+  const height = 230;
+  const margin = { top: 25, right: 35, bottom: 35, left: 55 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
 
-  // Find min/max elevations to scale chart gracefully
+  const idxToX = (idx: number): number => {
+    return margin.left + (idx / Math.max(1, points.length - 1)) * plotWidth;
+  };
+
+  // Time ticks (daily ticks)
+  const timeTicks: { idx: number; label: string }[] = [];
+  const numTimeTicks = Math.min(8, points.length);
+  const stepIdx = Math.max(1, Math.floor(points.length / (numTimeTicks - 1)));
+  for (let i = 0; i < points.length; i += stepIdx) {
+    const dt = points[i].rawTime.split(' ')[0].replace('2026-', '');
+    timeTicks.push({ idx: i, label: dt });
+  }
+
+  // ================= VIEW MODE 1: ELEVATION =================
   let minEl = -6.0;
   let maxEl = 10.0;
   for (const p of points) {
@@ -46,66 +62,83 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
       maxEl = Math.max(maxEl, p.sunHorizonElevation);
     }
   }
-  // Add margin
   minEl = Math.floor(minEl) - 1;
   maxEl = Math.ceil(maxEl) + 1;
   const elRange = maxEl - minEl;
-
-  const idxToX = (idx: number): number => {
-    return margin.left + (idx / (points.length - 1)) * plotWidth;
-  };
 
   const elToY = (el: number): number => {
     const clamped = Math.max(minEl, Math.min(maxEl, el));
     return margin.top + (1.0 - (clamped - minEl) / elRange) * plotHeight;
   };
 
-  // Build SVG path strings
   let sunPath = '';
   let earthPath = '';
   let sunHorizPath = '';
-  let earthHorizPath = '';
 
   for (let i = 0; i < points.length; i++) {
     const p = points[i];
     const x = idxToX(i);
-
-    // Sun path
     const sunY = elToY(p.sunElevation);
     sunPath += i === 0 ? `M ${x} ${sunY} ` : `L ${x} ${sunY} `;
 
-    // Sun direction horizon path
     const sunHY = elToY(p.sunHorizonElevation);
     sunHorizPath += i === 0 ? `M ${x} ${sunHY} ` : `L ${x} ${sunHY} `;
 
-    // Earth path
     if (!isNaN(p.earthElevation)) {
       const earthY = elToY(p.earthElevation);
       earthPath += earthPath === '' ? `M ${x} ${earthY} ` : `L ${x} ${earthY} `;
-
-      const earthHY = elToY(p.earthHorizonElevation);
-      earthHorizPath += earthHorizPath === '' ? `M ${x} ${earthHY} ` : `L ${x} ${earthHY} `;
     }
   }
-
-  // 0° reference line Y
   const yZero = elToY(0.0);
 
-  // Elevation ticks
   const elevTicks: number[] = [];
   const tickStep = elRange > 18 ? 4 : 2;
   for (let el = Math.ceil(minEl / tickStep) * tickStep; el <= maxEl; el += tickStep) {
     elevTicks.push(el);
   }
 
-  // Time ticks (e.g. 7 daily ticks)
-  const timeTicks: { idx: number; label: string }[] = [];
-  const numTimeTicks = Math.min(8, points.length);
-  const stepIdx = Math.floor(points.length / (numTimeTicks - 1));
-  for (let i = 0; i < points.length; i += stepIdx) {
-    const dt = points[i].rawTime.split(' ')[0].replace('2026-', '');
-    timeTicks.push({ idx: i, label: dt });
+  // ================= VIEW MODE 2: DISC FRACTION =================
+  const fracToY = (f: number): number => {
+    const clamped = Math.max(0, Math.min(1, f));
+    return margin.top + (1.0 - clamped) * plotHeight;
+  };
+
+  let discPath = '';
+  let discAreaPath = '';
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const x = idxToX(i);
+    const f = p.solarVisibleFraction ?? (p.sunVisible === 'visible' ? 1.0 : 0.0);
+    const y = fracToY(f);
+    discPath += i === 0 ? `M ${x} ${y} ` : `L ${x} ${y} `;
+    if (i === 0) discAreaPath = `M ${x} ${margin.top + plotHeight} L ${x} ${y} `;
+    else discAreaPath += `L ${x} ${y} `;
   }
+  discAreaPath += `L ${idxToX(points.length - 1)} ${margin.top + plotHeight} Z`;
+
+  // ================= VIEW MODE 3: PHOTOVOLTAIC POWER =================
+  let maxP = 100;
+  for (const p of points) {
+    if (p.pvPowerWatts > maxP) maxP = p.pvPowerWatts;
+  }
+  maxP = Math.ceil(maxP / 50) * 50;
+
+  const powerToY = (pWatts: number): number => {
+    const clamped = Math.max(0, Math.min(maxP, pWatts));
+    return margin.top + (1.0 - clamped / maxP) * plotHeight;
+  };
+
+  let powerPath = '';
+  let powerAreaPath = '';
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const x = idxToX(i);
+    const y = powerToY(p.pvPowerWatts);
+    powerPath += i === 0 ? `M ${x} ${y} ` : `L ${x} ${y} `;
+    if (i === 0) powerAreaPath = `M ${x} ${margin.top + plotHeight} L ${x} ${y} `;
+    else powerAreaPath += `L ${x} ${y} `;
+  }
+  powerAreaPath += `L ${idxToX(points.length - 1)} ${margin.top + plotHeight} Z`;
 
   // Mouse interaction
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -132,33 +165,86 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
 
   return (
     <div className="bg-[#0B1120] border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col justify-between">
+      {/* Top Header with View Switcher */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-2 border-b border-slate-800 gap-2">
-        <div className="flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-cyan-400" />
-          <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
-            Ephemeris Elevation Time-Series
-          </h2>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1.5">
+            <TrendingUp className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">
+              Time-Series Analysis
+            </h2>
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 text-xs">
+            <button
+              onClick={() => setViewMode('elevation')}
+              className={`px-2.5 py-1 rounded font-medium transition ${
+                viewMode === 'elevation'
+                  ? 'bg-cyan-950 text-cyan-300 border border-cyan-600/50'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              Elevation Angles (°)
+            </button>
+            <button
+              onClick={() => setViewMode('disc_fraction')}
+              className={`px-2.5 py-1 rounded font-medium flex items-center gap-1 transition ${
+                viewMode === 'disc_fraction'
+                  ? 'bg-cyan-950 text-amber-300 border border-amber-600/50'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sun className="w-3 h-3 text-amber-400" />
+              <span>Visible Disc f_sun (%)</span>
+            </button>
+            <button
+              onClick={() => setViewMode('power')}
+              className={`px-2.5 py-1 rounded font-medium flex items-center gap-1 transition ${
+                viewMode === 'power'
+                  ? 'bg-cyan-950 text-amber-300 border border-amber-600/50'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>PV Power (Watts)</span>
+            </button>
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-amber-400 inline-block" />
-            <span className="text-amber-300">Sun Elevation</span>
+        {viewMode === 'elevation' && (
+          <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-0.5 bg-amber-400 inline-block" />
+              <span className="text-amber-300">Sun Elevation</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-0.5 bg-blue-400 inline-block" />
+              <span className="text-blue-300">Earth Elevation</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-0.5 bg-emerald-500/80 inline-block border-b border-dashed border-emerald-400" />
+              <span className="text-emerald-400">Directional Horizon</span>
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <span className="w-3 h-0.5 bg-cyan-400/60 inline-block border-b border-dashed border-cyan-400" />
+              <span className="text-cyan-400">0° Reference</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-blue-400 inline-block" />
-            <span className="text-blue-300">Earth Elevation</span>
+        )}
+        {viewMode === 'disc_fraction' && (
+          <div className="flex items-center gap-3 text-xs font-mono text-amber-300">
+            <span className="w-3 h-1.5 bg-amber-400/40 inline-block border border-amber-400 rounded-sm" />
+            <span>Visible Solar Disc Area Fraction f_sun(x) ∈ [0, 1]</span>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-emerald-500/80 inline-block border-b border-dashed border-emerald-400" />
-            <span className="text-emerald-400">Directional Horizon</span>
+        )}
+        {viewMode === 'power' && (
+          <div className="flex items-center gap-3 text-xs font-mono text-amber-300">
+            <span className="w-3 h-1.5 bg-amber-500/30 inline-block border border-amber-500 rounded-sm" />
+            <span>Instantaneous Photovoltaic Power P_PV(t) [W]</span>
           </div>
-          <div className="flex items-center space-x-1.5">
-            <span className="w-3 h-0.5 bg-cyan-400/60 inline-block border-b border-dashed border-cyan-400" />
-            <span className="text-cyan-400">0° Reference</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* SVG Plot */}
@@ -170,6 +256,17 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
           onMouseLeave={() => setHoverIndex(null)}
           onClick={handleClick}
         >
+          <defs>
+            <linearGradient id="discAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.02" />
+            </linearGradient>
+            <linearGradient id="powerAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#EAB308" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#EAB308" stopOpacity="0.03" />
+            </linearGradient>
+          </defs>
+
           {/* Background grid */}
           <rect
             x={margin.left}
@@ -181,33 +278,136 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
             strokeWidth="1"
           />
 
-          {/* Horizontal Elevation Gridlines */}
-          {elevTicks.map((el) => {
-            const y = elToY(el);
-            return (
-              <g key={el}>
-                <line
-                  x1={margin.left}
-                  y1={y}
-                  x2={margin.left + plotWidth}
-                  y2={y}
-                  stroke="#1E293B"
-                  strokeWidth="0.8"
-                  strokeDasharray={el === 0 ? 'none' : '2 2'}
+          {/* ================= ELEVATION MODE RENDERING ================= */}
+          {viewMode === 'elevation' && (
+            <>
+              {elevTicks.map((el) => {
+                const y = elToY(el);
+                return (
+                  <g key={el}>
+                    <line
+                      x1={margin.left}
+                      y1={y}
+                      x2={margin.left + plotWidth}
+                      y2={y}
+                      stroke="#1E293B"
+                      strokeWidth="0.8"
+                      strokeDasharray={el === 0 ? 'none' : '2 2'}
+                    />
+                    <text
+                      x={margin.left - 8}
+                      y={y + 3}
+                      textAnchor="end"
+                      fill={el === 0 ? '#00E5FF' : '#64748B'}
+                      fontSize="9"
+                      fontFamily="monospace"
+                    >
+                      {el > 0 ? `+${el}°` : `${el}°`}
+                    </text>
+                  </g>
+                );
+              })}
+
+              <line
+                x1={margin.left}
+                y1={yZero}
+                x2={margin.left + plotWidth}
+                y2={yZero}
+                stroke="#00E5FF"
+                strokeWidth="1.2"
+                strokeDasharray="4 3"
+                opacity="0.7"
+              />
+
+              {sunHorizPath && (
+                <path
+                  d={sunHorizPath}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth="1.4"
+                  strokeDasharray="3 2"
+                  opacity="0.8"
                 />
-                <text
-                  x={margin.left - 8}
-                  y={y + 3}
-                  textAnchor="end"
-                  fill={el === 0 ? '#00E5FF' : '#64748B'}
-                  fontSize="9"
-                  fontFamily="monospace"
-                >
-                  {el > 0 ? `+${el}°` : `${el}°`}
-                </text>
-              </g>
-            );
-          })}
+              )}
+              {earthPath && (
+                <path d={earthPath} fill="none" stroke="#3B82F6" strokeWidth="2.0" opacity="0.9" />
+              )}
+              {sunPath && (
+                <path d={sunPath} fill="none" stroke="#F59E0B" strokeWidth="2.2" opacity="0.95" />
+              )}
+            </>
+          )}
+
+          {/* ================= DISC FRACTION MODE RENDERING ================= */}
+          {viewMode === 'disc_fraction' && (
+            <>
+              {[0, 0.25, 0.5, 0.75, 1.0].map((f) => {
+                const y = fracToY(f);
+                return (
+                  <g key={f}>
+                    <line
+                      x1={margin.left}
+                      y1={y}
+                      x2={margin.left + plotWidth}
+                      y2={y}
+                      stroke="#1E293B"
+                      strokeWidth="0.8"
+                      strokeDasharray={f === 0 || f === 1 ? 'none' : '2 2'}
+                    />
+                    <text
+                      x={margin.left - 8}
+                      y={y + 3}
+                      textAnchor="end"
+                      fill={f === 1.0 ? '#F59E0B' : '#64748B'}
+                      fontSize="9"
+                      fontFamily="monospace"
+                    >
+                      {(f * 100).toFixed(0)}%
+                    </text>
+                  </g>
+                );
+              })}
+
+              <path d={discAreaPath} fill="url(#discAreaGrad)" />
+              <path d={discPath} fill="none" stroke="#F59E0B" strokeWidth="2.2" opacity="0.95" />
+            </>
+          )}
+
+          {/* ================= POWER MODE RENDERING ================= */}
+          {viewMode === 'power' && (
+            <>
+              {[0, 0.25, 0.5, 0.75, 1.0].map((frac) => {
+                const pVal = Math.round(frac * maxP);
+                const y = powerToY(pVal);
+                return (
+                  <g key={frac}>
+                    <line
+                      x1={margin.left}
+                      y1={y}
+                      x2={margin.left + plotWidth}
+                      y2={y}
+                      stroke="#1E293B"
+                      strokeWidth="0.8"
+                      strokeDasharray="2 2"
+                    />
+                    <text
+                      x={margin.left - 8}
+                      y={y + 3}
+                      textAnchor="end"
+                      fill="#F59E0B"
+                      fontSize="9"
+                      fontFamily="monospace"
+                    >
+                      {pVal} W
+                    </text>
+                  </g>
+                );
+              })}
+
+              <path d={powerAreaPath} fill="url(#powerAreaGrad)" />
+              <path d={powerPath} fill="none" stroke="#EAB308" strokeWidth="2.2" opacity="0.95" />
+            </>
+          )}
 
           {/* Vertical Time Gridlines */}
           {timeTicks.map(({ idx, label }) => {
@@ -237,114 +437,42 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
             );
           })}
 
-          {/* 0.0° Reference Horizon Line */}
+          {/* Active / Hover Cursor Line */}
           <line
-            x1={margin.left}
-            y1={yZero}
-            x2={margin.left + plotWidth}
-            y2={yZero}
-            stroke="#00E5FF"
-            strokeWidth="1.2"
-            strokeDasharray="4 3"
-            opacity="0.7"
-          />
-
-          {/* Terrain Horizon in Sun Direction */}
-          <path
-            d={sunHorizPath}
-            fill="none"
-            stroke="#10B981"
-            strokeWidth="1.2"
-            strokeDasharray="3 2"
-            opacity="0.85"
-          />
-
-          {/* Earth Elevation Curve */}
-          {earthPath && (
-            <path
-              d={earthPath}
-              fill="none"
-              stroke="#3B82F6"
-              strokeWidth="2"
-              opacity="0.95"
-            />
-          )}
-
-          {/* Sun Elevation Curve */}
-          <path
-            d={sunPath}
-            fill="none"
-            stroke="#F59E0B"
-            strokeWidth="2.2"
-            opacity="1.0"
-          />
-
-          {/* Active Playback Scrubber Line */}
-          <line
-            x1={idxToX(activeIndex)}
+            x1={idxToX(hoverIndex !== null ? hoverIndex : activeIndex)}
             y1={margin.top}
-            x2={idxToX(activeIndex)}
+            x2={idxToX(hoverIndex !== null ? hoverIndex : activeIndex)}
             y2={margin.top + plotHeight}
             stroke="#00E5FF"
-            strokeWidth="2"
-            opacity="0.9"
-          />
-          <circle
-            cx={idxToX(activeIndex)}
-            cy={elToY(points[activeIndex].sunElevation)}
-            r="4.5"
-            fill="#F59E0B"
-            stroke="#FFFFFF"
             strokeWidth="1.5"
+            strokeDasharray={hoverIndex !== null ? 'none' : '3 2'}
+            opacity="0.85"
           />
-          {!isNaN(points[activeIndex].earthElevation) && (
-            <circle
-              cx={idxToX(activeIndex)}
-              cy={elToY(points[activeIndex].earthElevation)}
-              r="4.5"
-              fill="#3B82F6"
-              stroke="#FFFFFF"
-              strokeWidth="1.5"
-            />
-          )}
-
-          {/* Hover Crosshair */}
-          {hoverIndex !== null && hoverIndex !== activeIndex && (
-            <g className="pointer-events-none">
-              <line
-                x1={idxToX(hoverIndex)}
-                y1={margin.top}
-                x2={idxToX(hoverIndex)}
-                y2={margin.top + plotHeight}
-                stroke="#64748B"
-                strokeWidth="1"
-                strokeDasharray="3 3"
-              />
-            </g>
-          )}
         </svg>
       </div>
 
-      {/* Synchronized Hover/Active Tooltip Banner */}
-      <div className="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-300 font-mono gap-2">
-        <div className="flex items-center space-x-2">
-          <span className="text-slate-400">Timestamp:</span>
-          <span className="text-cyan-300 font-bold">{displayPoint.rawTime} UTC</span>
+      {/* Interactive Tooltip Readout */}
+      <div className="flex items-center justify-between text-xs px-2 pt-2 border-t border-slate-800 font-mono text-slate-300">
+        <div>
+          <span className="text-slate-400">Timestamp: </span>
+          <span className="text-cyan-400 font-semibold">{displayPoint.rawTime} UTC</span>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-4">
           <div>
             <span className="text-amber-400">Sun: </span>
-            <span>
-              {displayPoint.sunElevation >= 0 ? '+' : ''}
-              {displayPoint.sunElevation.toFixed(2)}° (Horiz: {displayPoint.sunHorizonElevation.toFixed(2)}°)
+            <span>{displayPoint.sunElevation.toFixed(2)}° </span>
+            <span className="text-amber-300/80">
+              (f_sun: {((displayPoint.solarVisibleFraction ?? (displayPoint.sunVisible === 'visible' ? 1 : 0)) * 100).toFixed(1)}%)
             </span>
+          </div>
+          <div>
+            <span className="text-amber-300">PV Power: </span>
+            <span className="font-semibold text-amber-400">{displayPoint.pvPowerWatts} W</span>
           </div>
           <div>
             <span className="text-blue-400">Earth: </span>
             <span>
-              {!isNaN(displayPoint.earthElevation)
-                ? `${displayPoint.earthElevation >= 0 ? '+' : ''}${displayPoint.earthElevation.toFixed(2)}°`
-                : 'N/A'}
+              {!isNaN(displayPoint.earthElevation) ? `${displayPoint.earthElevation.toFixed(2)}°` : 'N/A'}
             </span>
           </div>
         </div>
@@ -352,4 +480,3 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
     </div>
   );
 };
-

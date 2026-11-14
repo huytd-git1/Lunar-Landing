@@ -1,5 +1,7 @@
-import { CalculatedPoint, EphemerisRecord, HorizonProfile, VisibilityState } from '../types';
+import { CalculatedPoint, EphemerisRecord, HorizonProfile, SolarModelType, VisibilityState } from '../types';
 import { interpolateHorizonElevation } from './horizonProfile';
+import { calculateInstantaneousPvPower, DEFAULT_PANEL_CONFIG, integrateCumulativeEnergyWh, SolarPanelConfig } from './power';
+import { calculateVisibleSolarDiscFraction, evaluateSunlitState } from './solarDisc';
 
 /**
  * Calculates instantaneous point-object visibility according to the documented approximation:
@@ -33,13 +35,17 @@ export function evaluateEarthClearance(
 }
 
 /**
- * Merges Sun and Earth ephemeris records and evaluates horizon elevations and visibility states.
+ * Merges Sun and Earth ephemeris records and evaluates horizon elevations, finite disc fraction,
+ * visibility states, and instantaneous PV power.
  */
 export function calculateSiteVisibilitySeries(
   sunRecords: EphemerisRecord[],
   earthRecords: EphemerisRecord[],
   profile: HorizonProfile | null | undefined,
-  clearanceAngle: number = 0.5
+  clearanceAngle: number = 0.5,
+  solarModel: SolarModelType = 'finite_disc',
+  sunlitThreshold: number = 0.0,
+  solarPanel: SolarPanelConfig = DEFAULT_PANEL_CONFIG
 ): CalculatedPoint[] {
   // Map Earth records by timestamp or rawTime for fast matching
   const earthMap = new Map<string, EphemerisRecord>();
@@ -48,7 +54,9 @@ export function calculateSiteVisibilitySeries(
     earthMap.set(er.rawTime, er);
   }
 
-  const result: CalculatedPoint[] = [];
+  const rawPoints: Array<Omit<CalculatedPoint, 'cumulativeEnergyWh'>> = [];
+  const powersWatts: number[] = [];
+  const timestampsIso: string[] = [];
 
   for (let i = 0; i < sunRecords.length; i++) {
     const sr = sunRecords[i];
@@ -63,17 +71,26 @@ export function calculateSiteVisibilitySeries(
         stepMinutes = Math.max(1, Math.round((tNext - tCurrent) / (60 * 1000)));
       }
     } else if (i > 0) {
-      stepMinutes = result[i - 1].stepMinutes;
+      stepMinutes = rawPoints[i - 1].stepMinutes;
     }
 
     const sunAz = sr.azimuth;
     const sunEl = sr.elevation;
     const sunHorEl = interpolateHorizonElevation(profile, sunAz);
-    const sunVis = evaluatePointVisibility(sunEl, sunHorEl);
+    const sunClearance = sunEl - sunHorEl;
+    const sunPointVis = evaluatePointVisibility(sunEl, sunHorEl);
+
+    // Finite solar disc fraction & sunlit state
+    const discFraction = calculateVisibleSolarDiscFraction(sunEl, sunHorEl);
+    const sunlitEval = evaluateSunlitState(sunEl, sunHorEl, solarModel, sunlitThreshold);
+
+    // Instantaneous PV power
+    const pv = calculateInstantaneousPvPower(sunAz, sunEl, discFraction, solarPanel);
 
     let earthAz = NaN;
     let earthEl = NaN;
     let earthHorEl = 0;
+    let earthClearance = NaN;
     let earthVis: VisibilityState = 'unknown';
     let earthClear = false;
 
@@ -81,29 +98,45 @@ export function calculateSiteVisibilitySeries(
       earthAz = er.azimuth;
       earthEl = er.elevation;
       earthHorEl = interpolateHorizonElevation(profile, earthAz);
+      earthClearance = earthEl - earthHorEl;
       earthVis = evaluatePointVisibility(earthEl, earthHorEl);
       earthClear = evaluateEarthClearance(earthEl, earthHorEl, clearanceAngle);
     }
 
-    const bothVis = sunVis === 'visible' && earthVis === 'visible';
+    // Both visible is satisfied when Sun is in sunlit state and Earth center is visible
+    const bothVis = sunlitEval.state === 'visible' && earthVis === 'visible';
 
-    result.push({
+    powersWatts.push(pv.powerWatts);
+    timestampsIso.push(sr.timestamp);
+
+    rawPoints.push({
       timestamp: sr.timestamp,
       rawTime: sr.rawTime,
       stepMinutes,
       sunAzimuth: sunAz,
       sunElevation: sunEl,
       sunHorizonElevation: sunHorEl,
-      sunVisible: sunVis,
+      sunClearance,
+      sunVisible: sunPointVis,
+      solarVisibleFraction: discFraction,
+      sunlitState: sunlitEval.state,
       earthAzimuth: earthAz,
       earthElevation: earthEl,
       earthHorizonElevation: earthHorEl,
+      earthClearance,
       earthVisible: earthVis,
       earthCleared: earthClear,
       bothVisible: bothVis,
+      pvPowerWatts: Math.round(pv.powerWatts * 10) / 10,
+      solarVectorENU: pv.solarVector,
     });
   }
 
-  return result;
-}
+  // Integrate cumulative energy series
+  const energyResult = integrateCumulativeEnergyWh(timestampsIso, powersWatts);
 
+  return rawPoints.map((pt, idx) => ({
+    ...pt,
+    cumulativeEnergyWh: Math.round(energyResult.cumulativeSeriesWh[idx] * 10) / 10,
+  }));
+}

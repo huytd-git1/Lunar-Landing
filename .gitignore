@@ -35,3 +35,8 @@ pnpm-debug.log*
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Research PDFs (mapped in references/README.md and figure-sources.json)
+documents/*.pdf
+
+

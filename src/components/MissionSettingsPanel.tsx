@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MissionSettings } from '../types';
-import { Calendar, Play, RefreshCw, AlertCircle } from 'lucide-react';
+import { Calendar, Play, RefreshCw, AlertCircle, Sun, Zap } from 'lucide-react';
+import { PanelOrientationType } from '../services/power';
 
 interface MissionSettingsPanelProps {
   settings: MissionSettings;
@@ -21,6 +22,8 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
   onClearError,
   onUseFallback,
 }) => {
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
+
   // Compute total sample count per site
   const stepMinutes =
     settings.stepSize === '15m'
@@ -103,6 +106,158 @@ export const MissionSettingsPanel: React.FC<MissionSettingsPanelProps> = ({
               <option value="2h">2 Hours</option>
             </select>
           </div>
+        </div>
+
+        {/* Solar Visibility Model Selection */}
+        <div className="p-2.5 bg-[#070d1e] rounded-lg border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-300 text-[11px] font-semibold flex items-center gap-1.5">
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <span>Solar Illumination Model</span>
+            </span>
+            <span className="text-[10px] text-amber-400 font-mono">
+              {settings.solarModel === 'finite_disc' ? 'Gläser 2014 Disc' : 'Center Point'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onUpdateSettings({ ...settings, solarModel: 'finite_disc' })}
+              className={`py-1.5 px-2 rounded text-[11px] font-medium border text-center transition ${
+                settings.solarModel === 'finite_disc'
+                  ? 'bg-amber-950/40 text-amber-300 border-amber-500/50'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+              }`}
+            >
+              Finite Disc Model (f_sun)
+            </button>
+            <button
+              type="button"
+              onClick={() => onUpdateSettings({ ...settings, solarModel: 'point' })}
+              className={`py-1.5 px-2 rounded text-[11px] font-medium border text-center transition ${
+                settings.solarModel === 'point'
+                  ? 'bg-cyan-950/40 text-cyan-300 border-cyan-500/50'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+              }`}
+            >
+              Point-Object Model
+            </button>
+          </div>
+
+          {settings.solarModel === 'finite_disc' && (
+            <div className="pt-1">
+              <label className="block text-slate-400 text-[10px] mb-1">
+                Sunlit Threshold Criterion (f_min):
+              </label>
+              <select
+                value={settings.sunlitThreshold}
+                onChange={(e) =>
+                  onUpdateSettings({
+                    ...settings,
+                    sunlitThreshold: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
+              >
+                <option value={0.0}>Any Part Visible (f_sun &gt; 0%)</option>
+                <option value={0.1}>10% Disc Area (f_sun &gt;= 10%)</option>
+                <option value={0.5}>Half Disc Visible (f_sun &gt;= 50%)</option>
+                <option value={1.0}>Full Disc Visible (f_sun = 100%)</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* Advanced Panel & Photovoltaic Configuration Toggle */}
+        <div className="border border-slate-800 rounded-lg p-2.5 bg-[#081124]">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between text-[11px] font-semibold text-slate-300"
+          >
+            <span className="flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Photovoltaic Power Config (Gläser 2014)</span>
+            </span>
+            <span className="text-slate-500 text-xs">{showAdvanced ? '▲' : '▼'}</span>
+          </button>
+
+          {showAdvanced && (
+            <div className="mt-2.5 pt-2 border-t border-slate-800 space-y-2 text-[11px]">
+              <div>
+                <label className="block text-slate-400 text-[10px] mb-1">
+                  Solar Array Orientation
+                </label>
+                <select
+                  value={settings.solarPanel?.orientation || 'tracking_vertical'}
+                  onChange={(e) =>
+                    onUpdateSettings({
+                      ...settings,
+                      solarPanel: {
+                        ...settings.solarPanel,
+                        orientation: e.target.value as PanelOrientationType,
+                      },
+                    })
+                  }
+                  className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
+                >
+                  <option value="tracking_vertical">
+                    Azimuth-Tracking Vertical (Polar Mast Optimal)
+                  </option>
+                  <option value="fixed_vertical">Fixed Vertical (Facing North)</option>
+                  <option value="horizontal">Horizontal Flat (Rover Deck)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-slate-400 text-[10px] mb-1">
+                    Array Area (m²)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="50"
+                    value={settings.solarPanel?.areaM2 || 2.0}
+                    onChange={(e) =>
+                      onUpdateSettings({
+                        ...settings,
+                        solarPanel: {
+                          ...settings.solarPanel,
+                          areaM2: parseFloat(e.target.value) || 2.0,
+                        },
+                      })
+                    }
+                    className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 text-[10px] mb-1">
+                    Cell Efficiency (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="10"
+                    max="45"
+                    value={Math.round((settings.solarPanel?.efficiency || 0.28) * 100)}
+                    onChange={(e) =>
+                      onUpdateSettings({
+                        ...settings,
+                        solarPanel: {
+                          ...settings.solarPanel,
+                          efficiency: (parseFloat(e.target.value) || 28) / 100.0,
+                        },
+                      })
+                    }
+                    className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1 text-slate-200 font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Earth Clearance Angle */}

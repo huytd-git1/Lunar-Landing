@@ -1,4 +1,5 @@
 import { MissionSettings, SiteConfig } from '../types';
+import { DEFAULT_PANEL_CONFIG } from '../services/power';
 import {
   createDefaultProfile,
   DE_GERLACHE_CSV,
@@ -11,6 +12,9 @@ export const DEFAULT_MISSION_SETTINGS: MissionSettings = {
   durationDays: 7,
   stepSize: '30m',
   earthClearanceAngle: 0.5,
+  solarModel: 'finite_disc',
+  sunlitThreshold: 0.0,
+  solarPanel: DEFAULT_PANEL_CONFIG,
 };
 
 export const DEFAULT_SITES: SiteConfig[] = [
@@ -66,4 +70,3 @@ export const DEFAULT_SITES: SiteConfig[] = [
     ),
   },
 ];
-

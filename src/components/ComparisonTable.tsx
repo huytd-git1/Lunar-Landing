@@ -6,31 +6,36 @@ import {
   FileSpreadsheet,
   FileJson,
   Lightbulb,
+  Sliders,
+  Zap,
 } from 'lucide-react';
-import { generateTimeSeriesCsv, triggerFileDownload } from '../services/exportData';
+import { generateEventWindowsCsv, generateTimeSeriesCsv, downloadFile } from '../services/exportData';
 
 interface ComparisonTableProps {
   results: Record<string, SiteAnalysisResult>;
   selectedSiteId: string;
   onSelectSite: (siteId: string) => void;
   onExportJson: () => void;
+  onOpenHeightStudy: (siteId: string) => void;
 }
 
 type SortField =
   | 'siteName'
   | 'sunVisiblePct'
+  | 'meanSolarVisibleFractionPct'
   | 'sunVisibleHours'
   | 'longestSunObstructedHours'
+  | 'longestLightPeriodHours'
   | 'earthVisiblePct'
-  | 'longestEarthObstructedHours'
   | 'bothVisibleHours'
-  | 'dataCoveragePct';
+  | 'totalEnergyKWh';
 
 export const ComparisonTable: React.FC<ComparisonTableProps> = ({
   results,
   selectedSiteId,
   onSelectSite,
   onExportJson,
+  onOpenHeightStudy,
 }) => {
   const [sortField, setSortField] = useState<SortField>('sunVisiblePct');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
@@ -54,6 +59,9 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
     let valA = a.metrics[sortField as keyof SiteMetrics];
     let valB = b.metrics[sortField as keyof SiteMetrics];
 
+    if (valA === undefined) return 1;
+    if (valB === undefined) return -1;
+
     if (typeof valA === 'string') {
       valA = (valA as string).toLowerCase();
       valB = (valB as string).toLowerCase();
@@ -68,7 +76,14 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
     e.stopPropagation();
     const csv = generateTimeSeriesCsv(res);
     const safeName = res.site.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    triggerFileDownload(csv, `${safeName}_ephemeris_visibility.csv`, 'text/csv');
+    downloadFile(csv, `${safeName}_ephemeris_visibility.csv`, 'text/csv');
+  };
+
+  const handleDownloadEventsCsv = (res: SiteAnalysisResult, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const csv = generateEventWindowsCsv(res);
+    const safeName = res.site.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    downloadFile(csv, `${safeName}_event_windows.csv`, 'text/csv');
   };
 
   return (
@@ -83,7 +98,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
             </h2>
           </div>
           <p className="text-xs text-slate-400 mt-0.5">
-            Compare illumination windows, direct Earth line-of-sight, and obstruction durations
+            Compare illumination windows, finite solar disc fraction, PV power, and direct Earth line-of-sight
           </p>
         </div>
 
@@ -120,16 +135,16 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Sun Vis %</span>
+                  <span>Sunlit %</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
               <th
-                onClick={() => handleSort('sunVisibleHours')}
+                onClick={() => handleSort('meanSolarVisibleFractionPct')}
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Sun Hours</span>
+                  <span>Mean Disc f̄_sun</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -138,7 +153,26 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
               >
                 <div className="flex items-center justify-end space-x-1">
-                  <span>Max Darkness</span>
+                  <span>Max Dark (LCSP)</span>
+                  <ArrowUpDown className="w-3 h-3" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('longestLightPeriodHours')}
+                className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <span>Max Light (LCIP)</span>
+                  <ArrowUpDown className="w-3 h-3" />
+                </div>
+              </th>
+              <th
+                onClick={() => handleSort('totalEnergyKWh')}
+                className="py-2.5 px-3 cursor-pointer hover:text-white text-right text-amber-300"
+              >
+                <div className="flex items-center justify-end space-x-1">
+                  <Zap className="w-3 h-3" />
+                  <span>PV Energy</span>
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
@@ -152,15 +186,6 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                 </div>
               </th>
               <th
-                onClick={() => handleSort('longestEarthObstructedHours')}
-                className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
-              >
-                <div className="flex items-center justify-end space-x-1">
-                  <span>Max Comms Out</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </th>
-              <th
                 onClick={() => handleSort('bothVisibleHours')}
                 className="py-2.5 px-3 cursor-pointer hover:text-white text-right font-bold text-emerald-400"
               >
@@ -169,15 +194,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   <ArrowUpDown className="w-3 h-3" />
                 </div>
               </th>
-              <th
-                onClick={() => handleSort('dataCoveragePct')}
-                className="py-2.5 px-3 cursor-pointer hover:text-white text-right"
-              >
-                <div className="flex items-center justify-end space-x-1">
-                  <span>Data Cov %</span>
-                  <ArrowUpDown className="w-3 h-3" />
-                </div>
-              </th>
+              <th className="py-2.5 px-3 text-center">Trade Study</th>
               <th className="py-2.5 px-3 text-center">Export</th>
             </tr>
           </thead>
@@ -220,32 +237,56 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                     {metrics.sunVisiblePct}%
                   </td>
                   <td className="py-2.5 px-3 text-right text-amber-200">
-                    {metrics.sunVisibleHours}h
+                    {metrics.meanSolarVisibleFractionPct}%
                   </td>
-                  <td className="py-2.5 px-3 text-right text-slate-400">
+                  <td className="py-2.5 px-3 text-right text-red-400">
                     {metrics.longestSunObstructedHours}h
+                  </td>
+                  <td className="py-2.5 px-3 text-right text-emerald-400">
+                    {metrics.longestLightPeriodHours}h
+                  </td>
+                  <td className="py-2.5 px-3 text-right text-amber-300 font-bold">
+                    {metrics.totalEnergyKWh} kWh
                   </td>
                   <td className="py-2.5 px-3 text-right text-blue-300 font-bold">
                     {metrics.earthVisiblePct}%
                   </td>
-                  <td className="py-2.5 px-3 text-right text-slate-400">
-                    {metrics.longestEarthObstructedHours}h
-                  </td>
                   <td className="py-2.5 px-3 text-right text-emerald-400 font-bold">
                     {metrics.bothVisibleHours}h ({metrics.bothVisiblePct}%)
-                  </td>
-                  <td className="py-2.5 px-3 text-right text-slate-400">
-                    {metrics.dataCoveragePct}%
                   </td>
                   <td className="py-2.5 px-3 text-center">
                     <button
                       type="button"
-                      onClick={(e) => handleDownloadCsv(res, e)}
-                      className="p-1 rounded hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 transition"
-                      title="Download time-series CSV for this site"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenHeightStudy(site.id);
+                      }}
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-cyan-950 text-cyan-300 border border-slate-700 hover:border-cyan-500/50 text-[11px] font-sans flex items-center space-x-1 mx-auto transition"
+                      title="Analyze height sensitivity (1m, 2m, 5m, 10m) from Barker et al. (2021)"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Sliders className="w-3 h-3 text-cyan-400" />
+                      <span>Mast Study</span>
                     </button>
+                  </td>
+                  <td className="py-2.5 px-3 text-center">
+                    <div className="flex items-center justify-center space-x-1">
+                      <button
+                        type="button"
+                        onClick={(e) => handleDownloadCsv(res, e)}
+                        className="p-1 rounded hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 transition"
+                        title="Download time-series CSV (Section A.16 schema)"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDownloadEventsCsv(res, e)}
+                        className="px-1 py-0.5 rounded text-[10px] hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-800 transition"
+                        title="Download Event Windows CSV"
+                      >
+                        Events
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );

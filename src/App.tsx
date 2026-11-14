@@ -12,7 +12,7 @@ import { DEFAULT_MISSION_SETTINGS, DEFAULT_SITES } from './data/defaultSites';
 import bundledData from './data/bundledEphemeris.json';
 import { calculateSiteVisibilitySeries } from './services/visibility';
 import { calculateSiteMetrics } from './services/metrics';
-import { generateAnalysisJson, triggerFileDownload } from './services/exportData';
+import { generateAnalysisJson, downloadFile } from './services/exportData';
 import { convertObserverAltToKm } from './services/coordinates';
 
 import { Header } from './components/Header';
@@ -26,6 +26,8 @@ import { TimeControls } from './components/TimeControls';
 import { ComparisonTable } from './components/ComparisonTable';
 import { HowItWorksModal } from './components/HowItWorksModal';
 import { HorizonImportModal } from './components/HorizonImportModal';
+import { ResearchModal } from './components/ResearchModal';
+import { HeightComparisonModal } from './components/HeightComparisonModal';
 
 export const App: React.FC = () => {
   // 1. Mission and Site Configurations
@@ -61,6 +63,8 @@ export const App: React.FC = () => {
 
   // 5. Modals
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState<boolean>(false);
+  const [isResearchOpen, setIsResearchOpen] = useState<boolean>(false);
+  const [heightStudySiteId, setHeightStudySiteId] = useState<string | null>(null);
   const [importModalSiteId, setImportModalSiteId] = useState<string | null>(null);
 
   // Active site object
@@ -68,7 +72,7 @@ export const App: React.FC = () => {
     return sites.find((s) => s.id === selectedSiteId) || sites[0];
   }, [sites, selectedSiteId]);
 
-  // Compute Visibility and Duration Metrics for all configured sites
+  // Compute Visibility, Solar Disc, PV Power, and Duration Metrics for all configured sites
   const calculatedResults: Record<string, SiteAnalysisResult> = useMemo(() => {
     const res: Record<string, SiteAnalysisResult> = {};
 
@@ -83,10 +87,21 @@ export const App: React.FC = () => {
         cached.sun,
         cached.earth,
         effectiveProfile,
-        missionSettings.earthClearanceAngle
+        missionSettings.earthClearanceAngle,
+        missionSettings.solarModel,
+        missionSettings.sunlitThreshold,
+        missionSettings.solarPanel
       );
 
-      const metrics = calculateSiteMetrics(site.id, site.name, dataMode, points);
+      const metrics = calculateSiteMetrics(
+        site.id,
+        site.name,
+        dataMode,
+        points,
+        effectiveProfile,
+        cached.sun,
+        missionSettings.solarPanel
+      );
 
       res[site.id] = {
         site,
@@ -98,7 +113,15 @@ export const App: React.FC = () => {
     }
 
     return res;
-  }, [sites, ephemerisCache, dataMode, missionSettings.earthClearanceAngle]);
+  }, [
+    sites,
+    ephemerisCache,
+    dataMode,
+    missionSettings.earthClearanceAngle,
+    missionSettings.solarModel,
+    missionSettings.sunlitThreshold,
+    missionSettings.solarPanel,
+  ]);
 
   const activeResult = calculatedResults[selectedSiteId];
   const activePoints = activeResult?.points || [];
@@ -111,7 +134,9 @@ export const App: React.FC = () => {
     totalValidHours: 168,
     sunVisibleHours: 0,
     sunVisiblePct: 0,
+    meanSolarVisibleFractionPct: 0,
     longestSunObstructedHours: 0,
+    longestLightPeriodHours: 0,
     earthVisibleHours: 0,
     earthVisiblePct: 0,
     longestEarthObstructedHours: 0,
@@ -119,6 +144,8 @@ export const App: React.FC = () => {
     bothVisiblePct: 0,
     earthClearHours: 0,
     earthClearPct: 0,
+    totalEnergyKWh: 0,
+    maxPvPowerWatts: 0,
   };
 
   const activePoint = activePoints[activeIndex] || activePoints[0] || null;
@@ -206,11 +233,13 @@ export const App: React.FC = () => {
         `Data Mode: ${dataMode}`,
         'Ephemeris Source: NASA/JPL Horizons API',
         'Topography: LOLA DEM-derived circular horizon profiles',
+        'Solar Model: Finite-disc analytical area integration (Gläser et al. 2014 & De Rosa et al. 2012)',
+        'Photovoltaics: Surface ENU solar vector & panel incidence power modeling (Zhang et al. 2023)',
       ],
     };
 
     const jsonStr = generateAnalysisJson(overall);
-    triggerFileDownload(jsonStr, 'lunar_landing_site_navigator_analysis.json', 'application/json');
+    downloadFile(jsonStr, 'lunar_landing_site_navigator_analysis.json', 'application/json');
   }, [missionSettings, sites, calculatedResults, dataMode]);
 
   // Update a single site in the array
@@ -226,6 +255,11 @@ export const App: React.FC = () => {
     );
   };
 
+  const heightStudySite = sites.find((s) => s.id === heightStudySiteId) || null;
+  const heightStudyResults = heightStudySiteId
+    ? calculatedResults[heightStudySiteId]?.metrics?.heightComparison
+    : undefined;
+
   return (
     <div className="min-h-screen bg-[#070B14] text-slate-100 flex flex-col font-sans">
       {/* 1. Header */}
@@ -233,6 +267,7 @@ export const App: React.FC = () => {
         dataMode={dataMode}
         onDataModeChange={setDataMode}
         onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
+        onOpenResearch={() => setIsResearchOpen(true)}
         onExportJson={handleExportJson}
         isAnalyzing={isAnalyzing}
       />
@@ -323,6 +358,7 @@ export const App: React.FC = () => {
             selectedSiteId={selectedSiteId}
             onSelectSite={setSelectedSiteId}
             onExportJson={handleExportJson}
+            onOpenHeightStudy={(siteId) => setHeightStudySiteId(siteId)}
           />
         </div>
       </main>
@@ -337,6 +373,20 @@ export const App: React.FC = () => {
         isOpen={isHowItWorksOpen}
         onClose={() => setIsHowItWorksOpen(false)}
       />
+
+      <ResearchModal
+        isOpen={isResearchOpen}
+        onClose={() => setIsResearchOpen(false)}
+      />
+
+      {heightStudySiteId && (
+        <HeightComparisonModal
+          isOpen={true}
+          onClose={() => setHeightStudySiteId(null)}
+          site={heightStudySite}
+          results={heightStudyResults}
+        />
+      )}
 
       {importModalSiteId && (
         <HorizonImportModal

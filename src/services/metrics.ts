@@ -1,4 +1,7 @@
-import { CalculatedPoint, DataMode, SiteMetrics } from '../types';
+import { CalculatedPoint, DataMode, EphemerisRecord, HorizonProfile, SiteMetrics } from '../types';
+import { runMultiHeightAnalysis } from './heightAnalysis';
+import { DEFAULT_PANEL_CONFIG, SolarPanelConfig } from './power';
+import { integrateMeanSolarVisibleFraction } from './solarDisc';
 
 /**
  * Calculates scientifically rigorous duration metrics by integrating over actual time intervals.
@@ -7,13 +10,20 @@ import { CalculatedPoint, DataMode, SiteMetrics } from '../types';
  * - Linear margin interpolation at visibility transitions
  * - Boundary handling (start and end)
  * - Missing/unknown data retention without misclassifying as obstructed
- * - Longest continuous obstruction intervals
+ * - Longest continuous obstruction intervals (LCSP)
+ * - Longest continuous illumination intervals (LCIP)
+ * - Mean solar disc visible fraction \bar{f}_\odot (trapezoidal integration)
+ * - Photovoltaic energy metrics (kWh, max power)
+ * - Multi-height mast sensitivity assessment
  */
 export function calculateSiteMetrics(
   siteId: string,
   siteName: string,
   dataMode: DataMode,
-  points: CalculatedPoint[]
+  points: CalculatedPoint[],
+  baseProfile?: HorizonProfile | null,
+  sunEphemeris?: EphemerisRecord[],
+  panelConfig: SolarPanelConfig = DEFAULT_PANEL_CONFIG
 ): SiteMetrics {
   if (!points || points.length === 0) {
     return {
@@ -25,7 +35,9 @@ export function calculateSiteMetrics(
       totalValidHours: 0,
       sunVisibleHours: 0,
       sunVisiblePct: 0,
+      meanSolarVisibleFractionPct: 0,
       longestSunObstructedHours: 0,
+      longestLightPeriodHours: 0,
       earthVisibleHours: 0,
       earthVisiblePct: 0,
       longestEarthObstructedHours: 0,
@@ -33,6 +45,8 @@ export function calculateSiteMetrics(
       bothVisiblePct: 0,
       earthClearHours: 0,
       earthClearPct: 0,
+      totalEnergyKWh: 0,
+      maxPvPowerWatts: 0,
     };
   }
 
@@ -47,8 +61,15 @@ export function calculateSiteMetrics(
   let currentSunObstructedHours = 0;
   let maxSunObstructedHours = 0;
 
+  let currentLightHours = 0;
+  let maxLightHours = 0;
+
   let currentEarthObstructedHours = 0;
   let maxEarthObstructedHours = 0;
+
+  let maxPvPower = 0;
+  const timeHours: number[] = [];
+  const fractions: number[] = [];
 
   // Single point edge case
   if (points.length === 1) {
@@ -57,7 +78,8 @@ export function calculateSiteMetrics(
     totalMissionHours = hrs;
     const isValid = p.sunVisible !== 'unknown' && p.earthVisible !== 'unknown';
     const validHrs = isValid ? hrs : 0;
-    const sVis = p.sunVisible === 'visible' ? hrs : 0;
+    const isLit = p.sunlitState === 'visible' || p.sunVisible === 'visible';
+    const sVis = isLit ? hrs : 0;
     const eVis = p.earthVisible === 'visible' ? hrs : 0;
     const bVis = p.bothVisible ? hrs : 0;
     const ecVis = p.earthCleared ? hrs : 0;
@@ -71,7 +93,9 @@ export function calculateSiteMetrics(
       totalValidHours: validHrs,
       sunVisibleHours: sVis,
       sunVisiblePct: validHrs > 0 ? (sVis / validHrs) * 100 : 0,
-      longestSunObstructedHours: p.sunVisible === 'obstructed' ? hrs : 0,
+      meanSolarVisibleFractionPct: Math.round(p.solarVisibleFraction * 1000) / 10,
+      longestSunObstructedHours: !isLit ? hrs : 0,
+      longestLightPeriodHours: isLit ? hrs : 0,
       earthVisibleHours: eVis,
       earthVisiblePct: validHrs > 0 ? (eVis / validHrs) * 100 : 0,
       longestEarthObstructedHours: p.earthVisible === 'obstructed' ? hrs : 0,
@@ -79,13 +103,18 @@ export function calculateSiteMetrics(
       bothVisiblePct: validHrs > 0 ? (bVis / validHrs) * 100 : 0,
       earthClearHours: ecVis,
       earthClearPct: validHrs > 0 ? (ecVis / validHrs) * 100 : 0,
+      totalEnergyKWh: Math.round(((p.pvPowerWatts * hrs) / 1000) * 100) / 100,
+      maxPvPowerWatts: p.pvPowerWatts,
     };
   }
 
   // Iterate over adjacent intervals [i, i+1]
+  let elapsedHours = 0;
   for (let i = 0; i < points.length - 1; i++) {
     const p1 = points[i];
     const p2 = points[i + 1];
+
+    if (p1.pvPowerWatts > maxPvPower) maxPvPower = p1.pvPowerWatts;
 
     const t1 = new Date(p1.timestamp).getTime();
     const t2 = new Date(p2.timestamp).getTime();
@@ -96,6 +125,9 @@ export function calculateSiteMetrics(
     }
 
     totalMissionHours += dtHours;
+    timeHours.push(elapsedHours);
+    fractions.push(p1.solarVisibleFraction);
+    elapsedHours += dtHours;
 
     // Check validity of data in this interval
     const sunValid = p1.sunVisible !== 'unknown' && p2.sunVisible !== 'unknown';
@@ -108,6 +140,7 @@ export function calculateSiteMetrics(
           maxSunObstructedHours = currentSunObstructedHours;
         }
         currentSunObstructedHours = 0;
+        currentLightHours = 0;
       }
       if (!earthValid) {
         if (currentEarthObstructedHours > maxEarthObstructedHours) {
@@ -127,16 +160,19 @@ export function calculateSiteMetrics(
     let sunVisFraction = 0;
     let sunObsFraction = 0;
 
-    if (p1.sunVisible === 'visible' && p2.sunVisible === 'visible') {
+    const isLit1 = p1.sunlitState === 'visible' || p1.sunVisible === 'visible';
+    const isLit2 = p2.sunlitState === 'visible' || p2.sunVisible === 'visible';
+
+    if (isLit1 && isLit2) {
       sunVisFraction = 1.0;
-    } else if (p1.sunVisible === 'obstructed' && p2.sunVisible === 'obstructed') {
+    } else if (!isLit1 && !isLit2) {
       sunObsFraction = 1.0;
     } else {
       // Transition between visible and obstructed: interpolate crossing fraction
       const denom = Math.abs(sunMargin1) + Math.abs(sunMargin2);
       const fracCrossing = denom > 1e-6 ? Math.abs(sunMargin1) / denom : 0.5;
 
-      if (p1.sunVisible === 'visible') {
+      if (isLit1) {
         sunVisFraction = fracCrossing;
         sunObsFraction = 1.0 - fracCrossing;
       } else {
@@ -147,7 +183,7 @@ export function calculateSiteMetrics(
 
     sunVisibleHours += sunVisFraction * dtHours;
 
-    // Track continuous Sun obstruction
+    // Track continuous Sun obstruction (LCSP) & illumination (LCIP)
     if (sunObsFraction > 0) {
       currentSunObstructedHours += sunObsFraction * dtHours;
       if (currentSunObstructedHours > maxSunObstructedHours) {
@@ -159,6 +195,18 @@ export function calculateSiteMetrics(
       }
     } else {
       currentSunObstructedHours = 0;
+    }
+
+    if (sunVisFraction > 0) {
+      currentLightHours += sunVisFraction * dtHours;
+      if (currentLightHours > maxLightHours) {
+        maxLightHours = currentLightHours;
+      }
+      if (sunObsFraction > 0) {
+        currentLightHours = 0;
+      }
+    } else {
+      currentLightHours = 0;
     }
 
     // 2. Earth visibility integration
@@ -204,7 +252,6 @@ export function calculateSiteMetrics(
     if (p1.bothVisible && p2.bothVisible) {
       bothVisibleHours += dtHours;
     } else if (p1.bothVisible || p2.bothVisible) {
-      // Conservative or min-fraction transition estimate
       const jointFrac = Math.min(sunVisFraction, earthVisFraction);
       bothVisibleHours += jointFrac * dtHours;
     }
@@ -217,9 +264,18 @@ export function calculateSiteMetrics(
     }
   }
 
+  // Push final point to time & fraction
+  const lastP = points[points.length - 1];
+  if (lastP.pvPowerWatts > maxPvPower) maxPvPower = lastP.pvPowerWatts;
+  timeHours.push(elapsedHours);
+  fractions.push(lastP.solarVisibleFraction);
+
   // Handle lingering active obstruction at end of interval
   if (currentSunObstructedHours > maxSunObstructedHours) {
     maxSunObstructedHours = currentSunObstructedHours;
+  }
+  if (currentLightHours > maxLightHours) {
+    maxLightHours = currentLightHours;
   }
   if (currentEarthObstructedHours > maxEarthObstructedHours) {
     maxEarthObstructedHours = currentEarthObstructedHours;
@@ -231,6 +287,16 @@ export function calculateSiteMetrics(
   const bothVisiblePct = totalValidHours > 0 ? (bothVisibleHours / totalValidHours) * 100 : 0;
   const earthClearPct = totalValidHours > 0 ? (earthClearHours / totalValidHours) * 100 : 0;
 
+  // Trapezoidal mean visible fraction \bar{f}_\odot
+  const meanFrac = integrateMeanSolarVisibleFraction(timeHours, fractions);
+  const totalEnergyKWh = Math.round((points[points.length - 1].cumulativeEnergyWh / 1000.0) * 100) / 100;
+
+  // Optional multi-height analysis if records or profile supplied
+  let heightComparison;
+  if (sunEphemeris && sunEphemeris.length > 0) {
+    heightComparison = runMultiHeightAnalysis(sunEphemeris, baseProfile, panelConfig);
+  }
+
   return {
     siteId,
     siteName,
@@ -240,7 +306,9 @@ export function calculateSiteMetrics(
     totalValidHours: Math.round(totalValidHours * 100) / 100,
     sunVisibleHours: Math.round(sunVisibleHours * 10) / 10,
     sunVisiblePct: Math.round(sunVisiblePct * 10) / 10,
+    meanSolarVisibleFractionPct: Math.round(meanFrac * 1000) / 10,
     longestSunObstructedHours: Math.round(maxSunObstructedHours * 10) / 10,
+    longestLightPeriodHours: Math.round(maxLightHours * 10) / 10,
     earthVisibleHours: Math.round(earthVisibleHours * 10) / 10,
     earthVisiblePct: Math.round(earthVisiblePct * 10) / 10,
     longestEarthObstructedHours: Math.round(maxEarthObstructedHours * 10) / 10,
@@ -248,6 +316,8 @@ export function calculateSiteMetrics(
     bothVisiblePct: Math.round(bothVisiblePct * 10) / 10,
     earthClearHours: Math.round(earthClearHours * 10) / 10,
     earthClearPct: Math.round(earthClearPct * 10) / 10,
+    totalEnergyKWh,
+    maxPvPowerWatts: Math.round(maxPvPower * 10) / 10,
+    heightComparison,
   };
 }
-

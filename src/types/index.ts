@@ -1,6 +1,11 @@
+import { PanelOrientationType, SolarPanelConfig } from '../services/power';
+import { HeightComparisonResult } from '../services/heightAnalysis';
+
 export type VisibilityState = 'visible' | 'obstructed' | 'unknown';
 
 export type DataMode = 'real_geometric' | 'real_terrain' | 'demo';
+
+export type SolarModelType = 'point' | 'finite_disc';
 
 export interface SiteConfig {
   id: string;
@@ -37,6 +42,9 @@ export interface MissionSettings {
   durationDays: number; // e.g. 7 days
   stepSize: string; // '15m' | '30m' | '1h' | '2h'
   earthClearanceAngle: number; // degrees, e.g. 0.5
+  solarModel: SolarModelType;
+  sunlitThreshold: number; // 0.0 (any visible), 0.1, 0.5, 1.0
+  solarPanel: SolarPanelConfig;
 }
 
 export interface EphemerisRecord {
@@ -54,13 +62,20 @@ export interface CalculatedPoint {
   sunAzimuth: number;
   sunElevation: number;
   sunHorizonElevation: number;
+  sunClearance: number; // elevation - horizonElevation
   sunVisible: VisibilityState;
+  solarVisibleFraction: number; // [0, 1] for finite disc model
+  sunlitState: VisibilityState; // accounts for model and threshold
   earthAzimuth: number;
   earthElevation: number;
   earthHorizonElevation: number;
+  earthClearance: number;
   earthVisible: VisibilityState;
   earthCleared: boolean;
   bothVisible: boolean;
+  pvPowerWatts: number;
+  cumulativeEnergyWh: number;
+  solarVectorENU: [number, number, number];
 }
 
 export interface SiteMetrics {
@@ -72,7 +87,9 @@ export interface SiteMetrics {
   totalValidHours: number;
   sunVisibleHours: number;
   sunVisiblePct: number;
-  longestSunObstructedHours: number;
+  meanSolarVisibleFractionPct: number; // \bar{f}_\odot * 100
+  longestSunObstructedHours: number; // LCSP (Longest Continuous Shadow Period)
+  longestLightPeriodHours: number; // LCIP (Longest Continuous Illumination Period)
   earthVisibleHours: number;
   earthVisiblePct: number;
   longestEarthObstructedHours: number;
@@ -80,6 +97,9 @@ export interface SiteMetrics {
   bothVisiblePct: number;
   earthClearHours: number;
   earthClearPct: number;
+  totalEnergyKWh: number;
+  maxPvPowerWatts: number;
+  heightComparison?: HeightComparisonResult[];
 }
 
 export interface SiteAnalysisResult {
@@ -99,3 +119,4 @@ export interface OverallAnalysis {
   notes: string[];
 }
 
+export type { SolarPanelConfig, PanelOrientationType, HeightComparisonResult };
